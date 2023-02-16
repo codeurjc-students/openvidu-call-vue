@@ -1,20 +1,31 @@
 // Composables
 import { createRouter, createWebHistory } from 'vue-router'
+import App from '@/App.vue'
+import Join from '@/views/Join.vue'
+import JoinSession from '@/views/JoinSession.vue'
+import Login from '@/views/Login.vue'
+import Session from '@/views/Session.vue'
 
 const routes = [
   {
     path: '/',
-    component: () => import('@/layouts/default/Default.vue'),
-    children: [
-      {
-        path: '',
-        name: 'Home',
-        // route level code-splitting
-        // this generates a separate chunk (about.[hash].js) for this route
-        // which is lazy-loaded when the route is visited.
-        component: () => import(/* webpackChunkName: "home" */ '@/views/Home.vue'),
-      },
-    ],
+    name: 'login',
+    component: Login,
+  },
+  {
+    path: '/join',
+    name: 'join',
+    component: Join,
+  },
+  {
+    path: '/joinSession',
+    name: 'joinSession',
+    component: JoinSession,
+  },
+  {
+    path: '/session',
+    name: 'session',
+    component: Session,
   },
 ]
 
