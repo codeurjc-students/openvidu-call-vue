@@ -26,7 +26,7 @@ const routes = [
     path: '/session',
     name: 'session',
     component: Session,
-  },
+  }
 ]
 
 const router = createRouter({
