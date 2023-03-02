@@ -44,7 +44,7 @@
                   <template v-slot:activator="{ props }">
                     <v-icon class="ml-3" v-bind:="props" icon="mdi-lock"/>
                   </template>
-                  Username
+                  Password
                 </v-tooltip>
               </template>
             </v-text-field>
@@ -121,7 +121,7 @@
   max-inline-size: 26rem;
 }
 .margin_element {
-  margin-top: 10%;
+  margin-top: 8%;
 }
 .element_col {
   width: 100%;
