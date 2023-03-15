@@ -21,7 +21,7 @@
                                                 {{ video_activate ? icon='mdi-video' : icon='mdi-video-off'}}
                                             </v-icon> 
                                     </template>
-                                    Mute your video
+                                    {{ video_activate ? 'Mute your video' : 'Unmute your video'}}
                                     </v-tooltip>
                                 </template>
                             </v-select>
@@ -33,7 +33,7 @@
                                             {{ audio_activate ? icon='mdi-microphone': icon='mdi-microphone-off'}}
                                         </v-icon>
                                     </template>
-                                    Mute your audio
+                                    {{ audio_activate ? 'Mute your audio' : 'Unmute your audio'}}
                                     </v-tooltip>
                                 </template>
                             </v-select>

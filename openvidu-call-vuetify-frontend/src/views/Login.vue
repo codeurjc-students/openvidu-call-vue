@@ -86,9 +86,8 @@
 .background_component {
   background: linear-gradient(
     rgba(255,255,255,.2),
-    rgba(255,255,255,.2)),url('@/assets/background_mountain.jpg') 
-    top center no-repeat;
-  /* background-image: url('@/assets/background_mountain.jpg'); */
+    rgba(255,255,255,.2)),
+    url('@/assets/background_mountain.jpg') top center no-repeat;
   background-size: cover;
   height: 100%;
   text-align: center;
