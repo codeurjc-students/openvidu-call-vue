@@ -1,21 +1,14 @@
 // Composables
 import { createRouter, createWebHistory } from 'vue-router'
-import App from '@/App.vue'
-import Join from '@/views/Join.vue'
 import JoinSession from '@/views/JoinSession.vue'
-import Login from '@/views/Login.vue'
+import Home from '@/views/Home.vue'
 import Session from '@/views/Session.vue'
 
 const routes = [
   {
     path: '/',
-    name: 'login',
-    component: Login,
-  },
-  {
-    path: '/join',
-    name: 'join',
-    component: Join,
+    name: 'home',
+    component: Home,
   },
   {
     path: '/joinSession',
