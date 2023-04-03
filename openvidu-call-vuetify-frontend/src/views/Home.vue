@@ -4,7 +4,7 @@
 
     <div class="logout_style" v-if="userLogged">
         <label>Hi {{ username }}, do you want to logout?</label>
-        <v-btn icon variant="flat" class="transparent" @click="resetSession">
+        <v-btn icon variant="flat" class="transparent" @click="logout">
           <v-icon color="white">mdi-logout</v-icon>
         </v-btn>
     </div>
@@ -48,7 +48,7 @@
           <v-col>
             <v-sheet>
               <v-text-field variant="plain" class="element_col bg-surface-variant rounded-lg"
-                v-model="password" label="Password">
+                v-model="password" label="Password" type="password">
                 <template v-slot:prepend>
                   <v-tooltip location="bottom" >
                     <template v-slot:activator="{ props }">
@@ -59,6 +59,13 @@
                 </template>
               </v-text-field>
             </v-sheet>
+          </v-col>
+        </v-row>
+        <v-row class="margin_row">
+          <v-col>
+            <div class="roomError" v-if="loginError">
+              Authentication failed. Try again.
+            </div>
           </v-col>
         </v-row>
         <v-row class="margin_row">
@@ -107,6 +114,10 @@
 
 <script>
 import router from '@/router';
+import axios from "axios";
+axios.defaults.headers.post["Content-Type"] = "application/json";
+
+const APPLICATION_SERVER_URL = "http://localhost:5000/";
 
   export default{
       data() {
@@ -114,6 +125,7 @@ import router from '@/router';
             username: "",
             password: "",
             userLogged: false,
+            loginError: false,
 
             sessionName: "",
             validationForm: false,
@@ -136,17 +148,21 @@ import router from '@/router';
         }
       },
       methods: {
-        login() {
-          if ((this.username == "admin") && (this.password == "MY_SECRET")) {
+        async login() {
+          try {
+            await axios.post(APPLICATION_SERVER_URL + 'auth/login', 
+              {username: this.username, password: this.password});
             this.userLogged = true;
-          } else {
-            this.userLogged = false;
+          } catch (error) {
+            this.loginError = true;
+            throw error;
           }
         },
-        resetSession() {
+        logout() {
           this.username = "";
           this.password = ""
           this.userLogged = false;
+          this.loginError = false;
         },
         submit (event) {
           if (this.validationForm) {
@@ -156,7 +172,8 @@ import router from '@/router';
         generateNameOnClick() {
           this.sessionName = "Prueba";
         }
-      }
+      },
+      
   };
 </script>
 
@@ -212,5 +229,11 @@ import router from '@/router';
   position: absolute;
   font-size: 13px;
   color: #fff;
+}
+.roomError {
+	font-size: 14px;
+	color: #700;	
+	text-align: left;
+	font-weight: 600;
 }
 </style>
