@@ -11,7 +11,7 @@ const routes = [
     component: Home,
   },
   {
-    path: '/joinSession',
+    path: '/:roomName',
     name: 'joinSession',
     component: JoinSession,
   },

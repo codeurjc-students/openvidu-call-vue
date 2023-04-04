@@ -50,6 +50,7 @@
     export default{
         data() {
             return {
+                roomName: this.$route.params.roomName,
                 nickname: 'Nick original', 
                 nickFinal: 'Nick original',               
                 cameras: ['OBS', 'Camara no tan buena'],

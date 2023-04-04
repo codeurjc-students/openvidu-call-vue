@@ -82,7 +82,7 @@
       <v-row v-else class="margin_row">
           <v-col>
             <v-sheet>
-              <v-form validate-on="submit" @submit.prevent="submit">
+              <v-form validate-on="submit" @submit.prevent="goToVideoCall">
                 <v-text-field v-model="sessionName" :rules="rules" label="Session Name">
                   <template v-slot:prepend-inner>
                     <v-tooltip location="bottom" >
@@ -94,16 +94,18 @@
                   </template>
 
                   <template v-slot:append-inner>
-                    <v-tooltip location="bottom" >
+                    <v-tooltip location="bottom">
                       <template v-slot:activator="{ props }">
-                        <v-icon v-bind:="props" icon="mdi-cached" @click="generateNameOnClick"/>
+                        <v-icon v-bind:="props" icon="mdi-cached" @click="generateSessionName"/>
                       </template>
                       Generate new session name
                     </v-tooltip>
                   </template>
                 </v-text-field>
-                <v-btn type="submit" class="element_col rounded-lg" variant="tonal"
-                >JOIN</v-btn>
+                
+                <v-btn type="submit" class="element_col rounded-lg" variant="tonal">
+                  JOIN
+                </v-btn>
               </v-form>
             </v-sheet>
           </v-col>
@@ -115,6 +117,7 @@
 <script>
 import router from '@/router';
 import axios from "axios";
+import { animals, colors, countries, names, uniqueNamesGenerator } from 'unique-names-generator';
 axios.defaults.headers.post["Content-Type"] = "application/json";
 
 const APPLICATION_SERVER_URL = "http://localhost:5000/";
@@ -131,12 +134,16 @@ const APPLICATION_SERVER_URL = "http://localhost:5000/";
             validationForm: false,
             rules: [
               value => {
-                if (value) {
+                if (value && value?.length >= 6) {
                   this.validationForm = true;
                   return true
                 } else {
                   this.validationForm = false;
-                  return "Session name is required"
+                  if (value?.length < 6) {
+                    return 'Session name is too short!'
+                  } else {
+                    return "Session name is required"
+                  }                  
                 }
               }
             ]
@@ -164,13 +171,20 @@ const APPLICATION_SERVER_URL = "http://localhost:5000/";
           this.userLogged = false;
           this.loginError = false;
         },
-        submit (event) {
+        goToVideoCall (event) {
           if (this.validationForm) {
-            router.push({path: '/joinSession'})
+            this.sessionName = this.sessionName.replace(/ /g, '-');
+            router.push({path: '/' + this.sessionName})
           }
         },
-        generateNameOnClick() {
-          this.sessionName = "Prueba";
+        generateSessionName() {          
+          const randomName = uniqueNamesGenerator({ 
+            dictionaries: [names, countries, colors, animals],
+            separator: '-',
+            style: 'lowerCase'
+          });
+
+          this.sessionName = randomName;
         }
       },
       
