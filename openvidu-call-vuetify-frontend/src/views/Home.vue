@@ -121,6 +121,7 @@ import { animals, colors, countries, names, uniqueNamesGenerator } from 'unique-
 axios.defaults.headers.post["Content-Type"] = "application/json";
 
 const APPLICATION_SERVER_URL = "http://localhost:5000/";
+const AUTH_DATA_NAME = "callAuthData";
 
   export default{
       data() {
@@ -148,6 +149,26 @@ const APPLICATION_SERVER_URL = "http://localhost:5000/";
               }
             ]
           }
+      }, 
+      mounted() {
+        try {
+          // Retrieve user from localStorage
+          const authData = localStorage.getItem(AUTH_DATA_NAME);
+          if (authData) {
+            const decodedDataArr = atob(authData)?.split(":");
+            if (decodedDataArr?.length > 0) {
+              this.username = decodedDataArr[0];
+              this.password = decodedDataArr[1];
+              this.login();
+            }
+          }
+        } catch (error) {
+          this.loginError = true;
+          this.logout();
+        }
+      },
+      created: function() {
+        this.generateSessionName();
       },
       computed: {
         isButtonDisabled() {
@@ -160,16 +181,24 @@ const APPLICATION_SERVER_URL = "http://localhost:5000/";
             await axios.post(APPLICATION_SERVER_URL + 'auth/login', 
               {username: this.username, password: this.password});
             this.userLogged = true;
+            this.encodeLogin();
+            console.log('Loggin succeeded', this.username, this.password);
           } catch (error) {
+            console.error('Error doing login ', error);
             this.loginError = true;
-            throw error;
+            this.logout();
           }
+        },
+        encodeLogin() {
+          const encodedAuthData = btoa(this.username + ":" + this.password);
+          localStorage.setItem(AUTH_DATA_NAME, encodedAuthData);
         },
         logout() {
           this.username = "";
           this.password = ""
           this.userLogged = false;
           this.loginError = false;
+          localStorage.removeItem(AUTH_DATA_NAME);
         },
         goToVideoCall (event) {
           if (this.validationForm) {
