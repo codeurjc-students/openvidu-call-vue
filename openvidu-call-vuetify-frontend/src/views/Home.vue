@@ -117,8 +117,8 @@
 <script>
 import router from '@/router';
 import axios from "axios";
+import '@/api/axiosInterceptor';
 import { animals, colors, countries, names, uniqueNamesGenerator } from 'unique-names-generator';
-axios.defaults.headers.post["Content-Type"] = "application/json";
 
 const APPLICATION_SERVER_URL = "http://localhost:5000/";
 const AUTH_DATA_NAME = "callAuthData";
