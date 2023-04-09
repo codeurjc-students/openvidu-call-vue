@@ -9,7 +9,6 @@ axios.interceptors.request.use(function(config) {
         "Accept": "application/json, text/plain, */*",
         "Content-Type": "application/json"
       };
-      console.log("HE INTERCEPTADO");
     }
     return config;
 }, function(err) {

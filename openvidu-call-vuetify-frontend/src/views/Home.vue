@@ -30,7 +30,7 @@
         <v-row class="margin_row" >
           <v-col>
             <v-sheet>
-              <v-text-field variant="plain" class="element_col bg-surface-variant rounded-lg "
+              <v-text-field @keydown.enter="login" variant="plain" class="element_col bg-surface-variant rounded-lg "
                 v-model="username" label="Username">
                 <template v-slot:prepend>
                   <v-tooltip location="bottom">
@@ -47,7 +47,7 @@
         <v-row class="margin_row">
           <v-col>
             <v-sheet>
-              <v-text-field variant="plain" class="element_col bg-surface-variant rounded-lg"
+              <v-text-field @keydown.enter="login" variant="plain" class="element_col bg-surface-variant rounded-lg"
                 v-model="password" label="Password" type="password">
                 <template v-slot:prepend>
                   <v-tooltip location="bottom" >
@@ -82,7 +82,7 @@
       <v-row v-else class="margin_row">
           <v-col>
             <v-sheet>
-              <v-form validate-on="submit" @submit.prevent="goToVideoCall">
+              <v-form @keydown.enter="goToVideoCall" validate-on="submit" @submit.prevent="goToVideoCall">
                 <v-text-field v-model="sessionName" :rules="rules" label="Session Name">
                   <template v-slot:prepend-inner>
                     <v-tooltip location="bottom" >
@@ -200,7 +200,13 @@ const AUTH_DATA_NAME = "callAuthData";
           this.loginError = false;
           localStorage.removeItem(AUTH_DATA_NAME);
         },
-        goToVideoCall (event) {
+        keyDown(event) {
+          if (event.keyCode === 13) {
+            event.preventDefault();
+            this.goToVideoCall();
+          }
+        },
+        goToVideoCall () {
           if (this.validationForm) {
             this.sessionName = this.sessionName.replace(/ /g, '-');
             router.push({path: '/' + this.sessionName})
