@@ -2,7 +2,7 @@
 <!-- Shared with JOIN -->
   <div class="background_component">  
 
-    <div class="logout_style" v-if="userLogged">
+    <div class="logout_style" v-if="isUserLogged">
         <label>Hi {{ username }}, do you want to logout?</label>
         <v-btn icon variant="flat" class="transparent" @click="logout">
           <v-icon color="white">mdi-logout</v-icon>
@@ -26,7 +26,7 @@
       </v-row>
 
       <!-- LOGIN -->
-      <div v-if="!userLogged">
+      <div v-if="!isUserLogged">
         <v-row class="margin_row" >
           <v-col>
             <v-sheet>
@@ -116,19 +116,19 @@
 
 <script>
 import router from '@/router';
-import axios from "axios";
-import '@/api/axiosInterceptor';
 import { animals, colors, countries, names, uniqueNamesGenerator } from 'unique-names-generator';
 
-const APPLICATION_SERVER_URL = "http://localhost:5000/";
-const AUTH_DATA_NAME = "callAuthData";
+import AuthService from '@/api/AuthService'
+import { Subscription } from 'rxjs';
 
   export default{
       data() {
           return{
+            authService: new AuthService,
+            loginSubscription: Subscription,
             username: "",
             password: "",
-            userLogged: false,
+            isUserLogged: false,
             loginError: false,
 
             sessionName: "",
@@ -150,22 +150,11 @@ const AUTH_DATA_NAME = "callAuthData";
             ]
           }
       }, 
-      mounted() {
-        try {
-          // Retrieve user from localStorage
-          const authData = localStorage.getItem(AUTH_DATA_NAME);
-          if (authData) {
-            const decodedDataArr = atob(authData)?.split(":");
-            if (decodedDataArr?.length > 0) {
-              this.username = decodedDataArr[0];
-              this.password = decodedDataArr[1];
-              this.login();
-            }
-          }
-        } catch (error) {
-          this.loginError = true;
-          this.logout();
-        }
+      async mounted() {
+        this.subscribeToLogin();
+        await this.authService.loginUsingLocalStorageData();
+        this.username = this.authService.getUsername();
+        this.password = this.authService.getPassword();
       },
       created: function() {
         this.generateSessionName();
@@ -177,34 +166,20 @@ const AUTH_DATA_NAME = "callAuthData";
       },
       methods: {
         async login() {
-          try {
-            await axios.post(APPLICATION_SERVER_URL + 'auth/login', 
-              {username: this.username, password: this.password});
-            this.userLogged = true;
-            this.encodeLogin();
-            console.log('Loggin succeeded', this.username, this.password);
-          } catch (error) {
-            console.error('Error doing login ', error);
-            this.loginError = true;
-            this.logout();
-          }
+          this.loginError = false;
+          await this.authService.login(this.username, this.password);
         },
-        encodeLogin() {
-          const encodedAuthData = btoa(this.username + ":" + this.password);
-          localStorage.setItem(AUTH_DATA_NAME, encodedAuthData);
+        subscribeToLogin() {
+          this.loginSubscription = this.authService.isLoggedObs.subscribe((isLogged) => {
+            this.isUserLogged = isLogged;
+            this.loginError = this.authService.hadLoginError();
+          });
         },
         logout() {
           this.username = "";
-          this.password = ""
-          this.userLogged = false;
+          this.password = "";
           this.loginError = false;
-          localStorage.removeItem(AUTH_DATA_NAME);
-        },
-        keyDown(event) {
-          if (event.keyCode === 13) {
-            event.preventDefault();
-            this.goToVideoCall();
-          }
+          this.authService.logout();
         },
         goToVideoCall () {
           if (this.validationForm) {

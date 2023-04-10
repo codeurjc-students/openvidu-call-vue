@@ -13,6 +13,7 @@
     "axios": "^1.3.5",
     "core-js": "^3.8.3",
     "roboto-fontface": "*",
+    "rxjs": "^7.8.0",
     "unique-names-generator": "^4.7.1",
     "vue": "^3.2.13",
     "vue-router": "^4.0.0",
