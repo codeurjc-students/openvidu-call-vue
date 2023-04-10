@@ -124,7 +124,7 @@ import { Subscription } from 'rxjs';
   export default{
       data() {
           return{
-            authService: new AuthService,
+            authService: new AuthService(),
             loginSubscription: Subscription,
             username: "",
             password: "",
