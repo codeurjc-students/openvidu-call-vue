@@ -1,6 +1,6 @@
 import axios from 'axios';
 import './axiosInterceptor';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { BehaviorSubject} from 'rxjs';
 
 const APPLICATION_SERVER_URL = "http://localhost:5000/";
 const AUTH_DATA_NAME = "callAuthData";
