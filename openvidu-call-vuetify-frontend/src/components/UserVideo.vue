@@ -29,7 +29,8 @@ export default {
 	methods: {
 		getConnectionData () {
 			const { connection } = this.streamManager.stream;
-			return JSON.parse(connection.data);
+			var nickname = connection.data.toString().replace('%/%{}', '');
+			return JSON.parse(nickname);
 		},
 	},
 };

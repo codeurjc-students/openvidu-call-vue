@@ -1,8 +1,7 @@
 // Composables
 import { createRouter, createWebHistory } from 'vue-router'
-import JoinSession from '@/views/JoinSession.vue'
 import Home from '@/views/Home.vue'
-import Session from '@/views/Session.vue'
+import Call from '@/views/Call.vue'
 import AuthService from '@/api/AuthService';
 
 const routes = [
@@ -13,13 +12,8 @@ const routes = [
   },
   {
     path: '/:roomName',
-    name: 'joinSession',
-    component: JoinSession,
-  },
-  {
-    path: '/session',
-    name: 'session',
-    component: Session,
+    name: 'Call',
+    component: Call,
   }
 ]
 
