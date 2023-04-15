@@ -50,27 +50,23 @@
     <!-- SESSION -->
     <v-container v-else class="bg-surface-variant display_session" fluid>
         <v-row>
-            <v-col class="max_width_523" v-for="user in list_users">   
+            <v-col class="max_width_523" id="video-container">   
                 <v-sheet rounded class="white">   
-                    <v-img class="image_cam" src="@/assets/user_image.png">
-
-                        <div class="tag_style background_tonal">{{user}}</div>
-
-                        <div class="button_options">
-                            <v-btn class="background_tonal" variant="tonal" icon>
-                                <v-icon>mdi-dots-vertical</v-icon>
-                            </v-btn>
-                        </div>
-                    </v-img>
+                    <user-video :stream-manager="publisher" @click.native="updateMainVideoStreamManager(publisher)" />
                 </v-sheet>   
-            </v-col>       
+            </v-col>     
+            
+            <v-col class="max_width_523" v-for="sub in subscribers">                
+                <user-video  :key="sub.stream.connection.connectionId" :stream-manager="sub"
+                    @click.native="updateMainVideoStreamManager(sub)" />
+            </v-col>
         </v-row>
 
         <v-row align="end" align-self="end" no-gutters >
             <v-col class="name_logo_style">
                 <div class="display_name">
                     <v-img class="image_style transparent small_image" src="@/assets/logo.png"/>           
-                    <div align-center class="text-subtitle-1" >{{list_users[0]}} </div>
+                    <div align-center class="text-subtitle-1" >{{myUserName}} </div>
                 </div>
             </v-col>
             <v-col class="buttons_style">
@@ -120,7 +116,7 @@
 
                 mySessionId: this.$route.params.roomName,
                 nickname: 'Nick', 
-                myUserName: '',     
+                myUserName: this.nickname,     
 
                 // OpenVidu objects
                 OV: undefined,
@@ -146,7 +142,6 @@
 
                 // Control session
                 isChoosingOptions: true,
-                list_users: ['Cam 1', 'Cam 2'],
 
             }
         }, 
@@ -161,7 +156,7 @@
             // Specify session´s behavior
             this.session.on("streamCreated", ({ stream }) => {
                 const subscriber = this.session.subscribe(stream);
-                this.subscribers.push(subscriber);
+                this.subscribers.push(subscriber);                
             });
 
             this.session.on("streamDestroyed", ({ stream }) => {
@@ -175,42 +170,60 @@
                 console.warn(exception);
             });
 
-            // Inicializate tokens and connect to session
-            this.initializeTokens().then(() => {                
-                this.session.connect(this.tokens.webcam, { clientData: this.myUserName })
-                    .then(() => {
-                        let publisher = this.OV.initPublisher(undefined, {
-                            audioSource: undefined, 
-                            videoSource: undefined, 
-                            publishAudio: true, 
-                            publishVideo: true, 
-                            resolution: "640x480", 
-                            frameRate: 30, 
-                            insertMode: "APPEND", 
-                            mirror: false, 
-                        });
-
-                        this.mainStreamManager = publisher;
-
-                        this.publisher = publisher;
-
-                        this.session.publish(this.publisher);
-                })
-                .catch((error) => {
-                    console.log("There was an error connecting to the session:", error.code, error.message);
-                });
+            let publisher = this.OV.initPublisher(undefined, {
+                audioSource: undefined, 
+                videoSource: undefined, 
+                publishAudio: true, 
+                publishVideo: true, 
+                resolution: "523x480", 
+                frameRate: 30, 
+                insertMode: "APPEND", 
+                mirror: false, 
             });
+
+            this.mainStreamManager = publisher;
+
+            this.publisher = publisher;
+            
             window.addEventListener("beforeunload", this.leaveSession);
         },
         methods: {
             notEmpty (value) {
                 if (value != "") {
-                    this.nickFinal = this.nickname;
+                    this.myUserName = this.nickname;
                 } else {
                     this.nickname = this.myUserName;
                 }
             },
+            connectToSession() {
+                // Inicializate tokens and connect to session
+                this.initializeTokens().then(() => {                
+                    this.session.connect(this.tokens.webcam, { clientData: this.myUserName })
+                        .then(() => {
+                            let publisher = this.OV.initPublisher(undefined, {
+                                audioSource: undefined, 
+                                videoSource: undefined, 
+                                publishAudio: true, 
+                                publishVideo: true, 
+                                resolution: "523x480", 
+                                frameRate: 30, 
+                                insertMode: "APPEND", 
+                                mirror: false, 
+                            });
+
+                            this.mainStreamManager = publisher;
+
+                            this.publisher = publisher;
+
+                            this.session.publish(this.publisher);
+                    })
+                    .catch((error) => {
+                        console.log("There was an error connecting to the session:", error.code, error.message);
+                    });
+                });
+            },
             changePage() {
+                this.connectToSession();
                 this.isChoosingOptions = !this.isChoosingOptions;                             
             },      
             leaveSession() {
@@ -240,7 +253,6 @@
                     webcam: response.cameraToken,
                     screen: response.screenToken
                 };
-                console.log(response);
             },    
         }
 
@@ -248,85 +260,93 @@
 </script>
 
 <style>
-.col_center {
-    place-content: center;
-    align-items: center;
-    flex-direction: row;
-    display: flex;
-    box-sizing: border-box;
-    flex: 1 1 100%;
-    max-width: 55%;
-}
-.width_inherit {
-    width: inherit;
-}
-.margin_auto {
-    margin: auto;
-}
-.banner_style {
-    margin-bottom: 10px;
-    font-weight: 700;
-}
-.max_width_523 {
-    max-width: 523px !important;
-}
-.white {
-    color:white;
-}
-.image_cam {
-    left: 0px;
-    top: 0px;
-    width: 500px;
-    height: 500px;
-}
-.tag_style {
-    position: absolute; z-index: 999;
-    padding: 5px;
-    font-weight: 700;
-    border-radius: 5px 
-}
-.button_options {
-    position: absolute;
-    bottom: 0;
-    z-index: 10;
-    text-align: center;
-    right: 0px;
-}
-.background_tonal {
-    background-color: rgb(66 66 66);
-}
-.display_session {
-    display: grid;
-    height: 100%;
-}
-.small_image {
-    max-width: 35px;
-    max-height: 35px;
-}
-.display_name {
-    display: flex;
-    align-items: center;
-}
-.name_logo_style {
-    place-content: center flex-start;
-    align-items: center;
-    flex-direction: row;
-    box-sizing: border-box;
-    display: flex;
-    flex: 1 1 100%;
-    max-width: 20%;
-    margin-right: 40px;
-    position: absolute;
-}
-.buttons_style {
-    margin-right: 40px;
-    place-content: center;
-    align-items: center;
-    flex-direction: row;
-    box-sizing: border-box;
-    display: flex;
-    flex: 1 1 100%;
-    order: 2;
-    max-height: 60%;
-}
+    .col_center {
+        place-content: center;
+        align-items: center;
+        flex-direction: row;
+        display: flex;
+        box-sizing: border-box;
+        flex: 1 1 100%;
+        max-width: 55%;
+    }
+    .width_inherit {
+        width: inherit;
+    }
+    .margin_auto {
+        margin: auto;
+    }
+    .banner_style {
+        margin-bottom: 10px;
+        font-weight: 700;
+    }
+    .max_width_523 {
+        max-width: 523px !important;
+    }
+    .white {
+        color:white;
+    }
+    #video-container video {
+        position: relative;
+        float: left;
+        cursor: pointer;
+    }
+    #video-container p {
+        position: absolute; 
+        z-index: 999;
+        padding: 5px;
+        font-weight: 700;
+        border-radius: 5px;
+
+        background-color: rgb(66 66 66);
+        padding-right: 5px;
+        padding-left: 5px;
+        color: white;
+        font-weight: bold;
+        border-bottom-right-radius: 4px;
+    }
+    video {
+        width: 100%;
+        height: auto;
+    }
+    .button_options {
+        position: absolute;
+        bottom: 0;
+        z-index: 10;
+        text-align: center;
+        right: 0px;
+    }
+    .display_session {
+        display: grid;
+        height: 100%;
+    }
+    .small_image {
+        max-width: 35px;
+        max-height: 35px;
+    }
+    .display_name {
+        display: flex;
+        align-items: center;
+    }
+    .name_logo_style {
+        place-content: center flex-start;
+        align-items: center;
+        flex-direction: row;
+        box-sizing: border-box;
+        display: flex;
+        flex: 1 1 100%;
+        max-width: 20%;
+        margin-right: 40px;
+        position: absolute;
+    }
+    .buttons_style {
+        margin-right: 40px;
+        place-content: center;
+        align-items: center;
+        flex-direction: row;
+        box-sizing: border-box;
+        display: flex;
+        flex: 1 1 100%;
+        order: 2;
+        max-height: 60%;
+    }
 </style>

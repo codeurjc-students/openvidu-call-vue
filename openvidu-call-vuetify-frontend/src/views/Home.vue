@@ -26,8 +26,8 @@
       </v-row>
 
       <!-- LOGIN -->
-      <div v-if="!isUserLogged">
-        <v-row class="margin_row" >
+      <div v-if="!isUserLogged" class="margin_block">
+        <v-row>
           <v-col>
             <v-sheet>
               <v-text-field @keydown.enter="login" variant="plain" class="element_col bg-surface-variant rounded-lg "
@@ -44,7 +44,7 @@
             </v-sheet>
           </v-col>
         </v-row>
-        <v-row class="margin_row">
+        <v-row>
           <v-col>
             <v-sheet>
               <v-text-field @keydown.enter="login" variant="plain" class="element_col bg-surface-variant rounded-lg"
@@ -61,14 +61,14 @@
             </v-sheet>
           </v-col>
         </v-row>
-        <v-row class="margin_row">
+        <v-row>
           <v-col>
             <div class="roomError" v-if="loginError">
               Authentication failed. Try again.
             </div>
           </v-col>
         </v-row>
-        <v-row class="margin_row">
+        <v-row>
           <v-col>
             <v-sheet>
               <v-btn class="element_col rounded-lg" variant="tonal"
@@ -79,37 +79,39 @@
       </div>
 
       <!-- JOIN -->
-      <v-row v-else class="margin_row">
-          <v-col>
-            <v-sheet>
-              <v-form @keydown.enter="goToVideoCall" validate-on="submit" @submit.prevent="goToVideoCall">
-                <v-text-field v-model="sessionName" :rules="rules" label="Session Name">
-                  <template v-slot:prepend-inner>
-                    <v-tooltip location="bottom" >
-                      <template v-slot:activator="{ props }">
-                        <v-icon v-bind:="props" icon="mdi-video-account"/>
-                      </template>
-                      Session name
-                    </v-tooltip>
-                  </template>
+      <div v-else class="margin_block">
+        <v-row>
+            <v-col>
+              <v-sheet>
+                <v-form @keydown.enter="goToVideoCall" validate-on="submit" @submit.prevent="goToVideoCall">
+                  <v-text-field v-model="sessionName" :rules="rules" label="Session Name">
+                    <template v-slot:prepend-inner>
+                      <v-tooltip location="bottom" >
+                        <template v-slot:activator="{ props }">
+                          <v-icon v-bind:="props" icon="mdi-video-account"/>
+                        </template>
+                        Session name
+                      </v-tooltip>
+                    </template>
 
-                  <template v-slot:append-inner>
-                    <v-tooltip location="bottom">
-                      <template v-slot:activator="{ props }">
-                        <v-icon v-bind:="props" icon="mdi-cached" @click="generateSessionName"/>
-                      </template>
-                      Generate new session name
-                    </v-tooltip>
-                  </template>
-                </v-text-field>
-                
-                <v-btn type="submit" class="element_col rounded-lg" variant="tonal">
-                  JOIN
-                </v-btn>
-              </v-form>
-            </v-sheet>
-          </v-col>
-        </v-row>
+                    <template v-slot:append-inner>
+                      <v-tooltip location="bottom">
+                        <template v-slot:activator="{ props }">
+                          <v-icon v-bind:="props" icon="mdi-cached" @click="generateSessionName"/>
+                        </template>
+                        Generate new session name
+                      </v-tooltip>
+                    </template>
+                  </v-text-field>
+                  
+                  <v-btn type="submit" class="element_col rounded-lg" variant="tonal">
+                    JOIN
+                  </v-btn>
+                </v-form>
+              </v-sheet>
+            </v-col>
+          </v-row>
+      </div>
     </v-container>
   </div>  
 </template>
@@ -236,7 +238,7 @@ import { Subscription } from 'rxjs';
   letter-spacing: normal;
   margin: 0 0 16px;
 }
-.margin_row {
+.margin_block {
   inline-size: 90%;
   margin-inline: auto;
   max-inline-size: 26rem;
