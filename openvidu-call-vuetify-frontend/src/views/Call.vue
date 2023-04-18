@@ -52,13 +52,30 @@
         <v-row>
             <v-col class="max_width_523" id="video-container">   
                 <v-sheet rounded class="white">   
-                    <user-video :stream-manager="publisher" @click.native="updateMainVideoStreamManager(publisher)" />
+                    <user-video :stream-manager="publisher" :key="publisher" @click.native="updateMainVideoStreamManager(publisher)" />
                 </v-sheet>   
             </v-col>     
             
-            <v-col class="max_width_523" v-for="sub in subscribers" id="video-container">                
-                <user-video :key="sub.stream.connection.connectionId" :stream-manager="sub"
-                    @click.native="updateMainVideoStreamManager(sub)" />
+            <v-col class="max_width_523" v-for="(sub, indexSub) in subscribers" :key="indexSub" id="video-container">   
+                <div class="container-video-button">           
+                    <user-video :key="sub.stream.connection.connectionId" :stream-manager="sub"
+                        @click.native="updateMainVideoStreamManager(sub)" />
+                    <div class="button_options">
+                        <v-menu>
+                            <template v-slot:activator="{ props }">
+                                <v-btn class="background_tonal" variant="tonal" size="x-small" icon="mdi-dots-vertical" v-bind="props"/>
+                            </template>
+                            <v-list>
+                                <v-list-item v-for="(option, i) in optionsSubscriber[indexSub]" :key="i" :value="option" @click.stop="actionListOptionsSubscriber(option, sub)">
+                                    <template v-slot:prepend v-if="option.name == 'mute'">
+                                        <v-icon :icon="option.activated ? 'mdi-volume-high' : 'mdi-volume-off'"/>
+                                        <v-list-item-title v-text="option.activated ? 'Mute sound' : 'Unmute sound'"/> 
+                                    </template>                                    
+                                </v-list-item>
+                            </v-list>
+                        </v-menu>
+                    </div>
+                </div>
             </v-col>
         </v-row>
 
@@ -72,7 +89,7 @@
             <v-col class="buttons_style">
                 <v-tooltip location="bottom">
                     <template v-slot:activator="{ props }">
-                        <v-btn class="mx-2" variant="tonal" icon @click="audio_activate = !audio_activate" v-bind:="props">
+                        <v-btn class="mx-2" variant="tonal" icon @click="changeMidSessionAudio" v-bind:="props">
                             <v-icon>{{ audio_activate ? icon='mdi-microphone' : icon='mdi-microphone-off'}}</v-icon>
                         </v-btn>
                     </template>
@@ -80,7 +97,7 @@
                 </v-tooltip>
                 <v-tooltip location="bottom">
                     <template v-slot:activator="{ props }">
-                        <v-btn class="mx-2" variant="tonal" icon @click="video_activate = !video_activate" v-bind:="props">
+                        <v-btn class="mx-2" variant="tonal" icon @click="changeMidSessionVideo" v-bind:="props">
                             <v-icon>{{ video_activate ? icon='mdi-video' : icon='mdi-video-off'}}</v-icon>
                         </v-btn>
                     </template>
@@ -144,6 +161,7 @@
 
                 // Control session
                 isChoosingOptions: true,
+                optionsSubscriber: []
 
             }
         },        
@@ -158,14 +176,21 @@
             // Specify session´s behavior
             this.session.on("streamCreated", ({ stream }) => {
                 const subscriber = this.session.subscribe(stream);
-                this.subscribers.push(subscriber);                
+                this.subscribers.push(subscriber); 
+                this.optionsSubscriber.push(
+                    [
+                        {name: "mute",
+                        activated: true}
+                    ]
+                );              
             });
 
             this.session.on("streamDestroyed", ({ stream }) => {
                 const index = this.subscribers.indexOf(stream.streamManager, 0);
                 if (index >= 0) {
                     this.subscribers.splice(index, 1);
-                }
+                    this.optionsSubscriber.splice(index, 1);
+                }                
             });
 
             this.session.on("exception", ({ exception }) => {
@@ -188,8 +213,7 @@
                 this.microphone = this.microphones[0].id;
                 this.updateInputSource();
                 
-            });
-            
+            });            
             
             window.addEventListener("beforeunload", this.leaveSession);
         },
@@ -209,6 +233,14 @@
                 this.audio_activate = !this.audio_activate;
                 this.updateInputSource();
             },
+            actionListOptionsSubscriber(option, subscriber) {
+                switch (option.name){
+                    case 'mute': 
+                        option.activated = !option.activated;
+                        subscriber.subscribeToAudio(option.activated);
+                        break;
+                }           
+            },
             updateInputSource() {
                 let publisher = this.OV.initPublisher(undefined, {
                     audioSource: this.microphone, 
@@ -224,6 +256,14 @@
                 this.mainStreamManager = publisher;
 
                 this.publisher = publisher;
+            },
+            changeMidSessionAudio() {
+                this.audio_activate = !this.audio_activate;
+                this.publisher.publishAudio(this.audio_activate);
+            },
+            changeMidSessionVideo() {
+                this.video_activate = !this.video_activate;
+                this.publisher.publishVideo(this.video_activate);
             },
             connectToSession() {
                 // Inicializate tokens and connect to session
@@ -323,6 +363,10 @@
     video {
         width: 100%;
         height: auto;
+    }
+    .container-video-button {
+        position: relative;
+        float: left;
     }
     .button_options {
         position: absolute;
