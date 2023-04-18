@@ -117,11 +117,11 @@
 </template>
 
 <script>
-import router from '@/router';
-import { animals, colors, countries, names, uniqueNamesGenerator } from 'unique-names-generator';
+  import router from '@/router';
+  import { animals, colors, countries, names, uniqueNamesGenerator } from 'unique-names-generator';
 
-import AuthService from '@/api/AuthService'
-import { Subscription } from 'rxjs';
+  import AuthService from '@/api/AuthService'
+  import { Subscription } from 'rxjs';
 
   export default{
       data() {

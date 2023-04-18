@@ -4,7 +4,7 @@
         <v-row>
             <v-col>
                 <v-sheet class="pa-5" v-if="session">
-                    <user-video :stream-manager="mainStreamManager" /> 
+                    <user-video :stream-manager="mainStreamManager" :key="mainStreamManager"/>                     
                 </v-sheet>
             </v-col>
             <v-col class="col_center">
@@ -14,11 +14,11 @@
                             <v-text-field v-model="nickname" :rules="[notEmpty]" label="Nickname" prepend-icon="mdi-account"></v-text-field>
                             
                             <v-banner class="banner_style" text="Choose your devices"/>                            
-                            <v-select v-model="camera" :items="cameras" item-text="name" label="Video device">
+                            <v-select v-model="camera" :items="cameras" item-title="name" item-value="id" label="Video device" @update:modelValue="updateInputSource">
                                 <template v-slot:prepend>
                                     <v-tooltip location="bottom" >
                                     <template v-slot:activator="{ props }">
-                                            <v-icon @click="video_activate = !video_activate" v-bind:="props">
+                                            <v-icon @click="changeActiveVideo" v-bind:="props">
                                                 {{ video_activate ? icon='mdi-video' : icon='mdi-video-off'}}
                                             </v-icon> 
                                     </template>
@@ -26,11 +26,11 @@
                                     </v-tooltip>
                                 </template>
                             </v-select>
-                            <v-select v-model="microphone" :items="microphones" label="Audio device">
+                            <v-select v-model="microphone" :items="microphones" item-title="name" item-value="id" label="Audio device" @update:modelValue="updateInputSource">
                                 <template v-slot:prepend>
                                     <v-tooltip location="bottom" >
                                     <template v-slot:activator="{ props }">
-                                        <v-icon @click="audio_activate = !audio_activate" v-bind:="props">
+                                        <v-icon @click="changeActiveAudio" v-bind:="props">
                                             {{ audio_activate ? icon='mdi-microphone': icon='mdi-microphone-off'}}
                                         </v-icon>
                                     </template>
@@ -56,8 +56,8 @@
                 </v-sheet>   
             </v-col>     
             
-            <v-col class="max_width_523" v-for="sub in subscribers">                
-                <user-video  :key="sub.stream.connection.connectionId" :stream-manager="sub"
+            <v-col class="max_width_523" v-for="sub in subscribers" id="video-container">                
+                <user-video :key="sub.stream.connection.connectionId" :stream-manager="sub"
                     @click.native="updateMainVideoStreamManager(sub)" />
             </v-col>
         </v-row>
@@ -92,7 +92,7 @@
                 <v-btn class="mx-2" variant="tonal" icon>
                     <v-icon>mdi-dots-vertical</v-icon>
                 </v-btn>
-                <v-btn class="mx-2" color="red" variant="flat" rounded="normal" @click="changePage" >
+                <v-btn class="mx-2" color="red" variant="flat" rounded="normal" @click="goToHome" >
                     <v-icon>mdi-phone-hangup</v-icon>
                 </v-btn>
             </v-col>
@@ -102,6 +102,7 @@
 </template>
 
 <script>
+    import router from '@/router';
     import { OpenVidu } from "openvidu-browser";
     import UserVideo from "../components/UserVideo.vue";
     import SessionService from "@/api/SessionService";
@@ -115,8 +116,8 @@
                 sessionService: new SessionService(),
 
                 mySessionId: this.$route.params.roomName,
-                nickname: 'Nick', 
-                myUserName: this.nickname,     
+                nickname: 'OpenVidu_User' + Math.floor(Math.random() * 100), 
+                myUserName: '',     
 
                 // OpenVidu objects
                 OV: undefined,
@@ -125,13 +126,14 @@
                 publisher: undefined,
                 subscribers: [],
 
-                // Control joinSession
-                cameras: ['OBS', 'Camara no tan buena'],
-                camera: 'OBS',
+                // Control JoinSession
+                cameras: [],
+                camera: undefined,
+                microphones: [],
+                microphone: undefined,
                 video_activate: true,
                 audio_activate: true,
-                microphones: ['Realteck', 'Micro de cámara'],
-                microphone: 'Realteck',
+                
 
                 recordingEnabled: false,
                 recordingList: [],
@@ -144,11 +146,11 @@
                 isChoosingOptions: true,
 
             }
-        }, 
+        },        
         created() {
+            // Initialize different components
             this.myUserName = this.nickname;
 
-            // Initialize different components
             this.OV = new OpenVidu();
 
             this.session = this.OV.initSession();
@@ -170,20 +172,24 @@
                 console.warn(exception);
             });
 
-            let publisher = this.OV.initPublisher(undefined, {
-                audioSource: undefined, 
-                videoSource: undefined, 
-                publishAudio: true, 
-                publishVideo: true, 
-                resolution: "523x480", 
-                frameRate: 30, 
-                insertMode: "APPEND", 
-                mirror: false, 
+            // Get input sources
+            this.OV.getDevices().then(devices => {
+                var videoDevices = devices.filter(device => device.kind === 'videoinput');
+                for (var numDevice in videoDevices) {
+                    this.cameras.push({name: videoDevices[numDevice].label , id: videoDevices[numDevice].deviceId});
+                }
+
+                var microphoneDevices = devices.filter(device => device.kind === 'audioinput');
+                for (var numDevice in microphoneDevices) {
+                    this.microphones.push({name: microphoneDevices[numDevice].label , id: microphoneDevices[numDevice].deviceId});
+                }
+
+                this.camera = this.cameras[0].id;
+                this.microphone = this.microphones[0].id;
+                this.updateInputSource();
+                
             });
-
-            this.mainStreamManager = publisher;
-
-            this.publisher = publisher;
+            
             
             window.addEventListener("beforeunload", this.leaveSession);
         },
@@ -195,26 +201,35 @@
                     this.nickname = this.myUserName;
                 }
             },
+            changeActiveVideo() {
+                this.video_activate = !this.video_activate;
+                this.updateInputSource();
+            },
+            changeActiveAudio() {
+                this.audio_activate = !this.audio_activate;
+                this.updateInputSource();
+            },
+            updateInputSource() {
+                let publisher = this.OV.initPublisher(undefined, {
+                    audioSource: this.microphone, 
+                    videoSource: this.camera, 
+                    publishAudio: this.audio_activate, 
+                    publishVideo: this.video_activate, 
+                    resolution: "523x480", 
+                    frameRate: 30, 
+                    insertMode: "APPEND", 
+                    mirror: false, 
+                });
+
+                this.mainStreamManager = publisher;
+
+                this.publisher = publisher;
+            },
             connectToSession() {
                 // Inicializate tokens and connect to session
                 this.initializeTokens().then(() => {                
                     this.session.connect(this.tokens.webcam, { clientData: this.myUserName })
-                        .then(() => {
-                            let publisher = this.OV.initPublisher(undefined, {
-                                audioSource: undefined, 
-                                videoSource: undefined, 
-                                publishAudio: true, 
-                                publishVideo: true, 
-                                resolution: "523x480", 
-                                frameRate: 30, 
-                                insertMode: "APPEND", 
-                                mirror: false, 
-                            });
-
-                            this.mainStreamManager = publisher;
-
-                            this.publisher = publisher;
-
+                        .then(() => {                            
                             this.session.publish(this.publisher);
                     })
                     .catch((error) => {
@@ -223,21 +238,22 @@
                 });
             },
             changePage() {
-                this.connectToSession();
-                this.isChoosingOptions = !this.isChoosingOptions;                             
+                this.isChoosingOptions = false;
+                this.connectToSession();                                    
             },      
+            goToHome() {
+                this.leaveSession();
+                router.push({path: '/' })
+            },
             leaveSession() {
-                // --- 7) Leave the session by calling 'disconnect' method over the Session object ---
                 if (this.session) this.session.disconnect();
 
-                // Empty all properties...
                 this.session = undefined;
                 this.mainStreamManager = undefined;
                 this.publisher = undefined;
                 this.subscribers = [];
                 this.OV = undefined;
 
-                // Remove beforeunload listener
                 window.removeEventListener("beforeunload", this.leaveSession);
             },      
             updateMainVideoStreamManager(stream) {
