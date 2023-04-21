@@ -151,13 +151,16 @@
                 video_activate: true,
                 audio_activate: true,
                 
-
+                // Response initializeTokens
+                broadcastingEnabled: false,
                 recordingEnabled: false,
                 recordingList: [],
                 tokens: {
                     webcam: "",
                     screen: "",
                 },
+                isRecordingActive: false,
+                isBroadcastingActive: false,
 
                 // Control session
                 isChoosingOptions: true,
@@ -303,12 +306,15 @@
             async initializeTokens() {
                 var nick = "";
                 const response = await this.sessionService.getTokens(this.mySessionId, nick);
+                this.broadcastingEnabled = response.broadcastingEnabled;
                 this.recordingEnabled = response.recordingEnabled;
                 this.recordingList = response.recordings;
                 this.tokens = {
                     webcam: response.cameraToken,
                     screen: response.screenToken
                 };
+                this.isRecordingActive = response.isRecordingActive;
+                this.isBroadcastingActive = response.isBroadcastingActive;
             },    
         }
 
