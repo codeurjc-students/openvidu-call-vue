@@ -16,25 +16,29 @@
                             <v-banner class="banner_style" text="Choose your devices"/>                            
                             <v-select v-model="camera" :items="cameras" item-title="name" item-value="id" label="Video device" @update:modelValue="updateInputSource">
                                 <template v-slot:prepend>
-                                    <v-tooltip location="bottom" >
-                                    <template v-slot:activator="{ props }">
-                                            <v-icon @click="changeActiveVideo" v-bind:="props">
-                                                {{ video_activate ? icon='mdi-video' : icon='mdi-video-off'}}
-                                            </v-icon> 
-                                    </template>
-                                    {{ video_activate ? 'Mute your video' : 'Unmute your video'}}
+                                    <v-tooltip location="bottom">
+                                        <template v-slot:activator="{ props }">
+                                            <v-avatar v-bind:="props" @click="changeActiveVideo" :color="setBackgroundColorVideo">                                                 
+                                                <v-icon>
+                                                    {{ video_activate ? icon='mdi-video' : icon='mdi-video-off'}}
+                                                </v-icon> 
+                                            </v-avatar>                                            
+                                        </template>
+                                        {{ video_activate ? 'Mute your video' : 'Unmute your video'}}
                                     </v-tooltip>
                                 </template>
                             </v-select>
                             <v-select v-model="microphone" :items="microphones" item-title="name" item-value="id" label="Audio device" @update:modelValue="updateInputSource">
                                 <template v-slot:prepend>
                                     <v-tooltip location="bottom" >
-                                    <template v-slot:activator="{ props }">
-                                        <v-icon @click="changeActiveAudio" v-bind:="props">
-                                            {{ audio_activate ? icon='mdi-microphone': icon='mdi-microphone-off'}}
-                                        </v-icon>
-                                    </template>
-                                    {{ audio_activate ? 'Mute your audio' : 'Unmute your audio'}}
+                                        <template v-slot:activator="{ props }">
+                                            <v-avatar v-bind:="props" @click="changeActiveAudio" :color="setBackgroundColorAudio">
+                                                <v-icon>
+                                                    {{ audio_activate ? icon='mdi-microphone': icon='mdi-microphone-off'}}
+                                                </v-icon>
+                                            </v-avatar>
+                                        </template>
+                                        {{ audio_activate ? 'Mute your audio' : 'Unmute your audio'}}
                                     </v-tooltip>
                                 </template>
                             </v-select>
@@ -60,7 +64,12 @@
                 <div class="container-video-button">           
                     <user-video :key="sub.stream.connection.connectionId" :stream-manager="sub"
                         @click.native="updateMainVideoStreamManager(sub)" />
-                    <div class="button_options">
+                    <div class="circles_options left" v-if="!hasAudioActive(sub)">
+                        <v-avatar size="small" color="red">
+                            <v-icon size="small" icon="mdi-microphone-off"/>
+                        </v-avatar>   
+                    </div>
+                    <div class="circles_options right">
                         <v-menu>
                             <template v-slot:activator="{ props }">
                                 <v-btn class="background_tonal" variant="tonal" size="x-small" icon="mdi-dots-vertical" v-bind="props"/>
@@ -89,7 +98,7 @@
             <v-col class="buttons_style">
                 <v-tooltip location="bottom">
                     <template v-slot:activator="{ props }">
-                        <v-btn class="mx-2" variant="tonal" icon @click="changeMidSessionAudio" v-bind:="props">
+                        <v-btn class="mx-2" :variant="setVariantAudio" icon @click="changeMidSessionAudio" v-bind:="props" :color="setBackgroundColorAudio">
                             <v-icon>{{ audio_activate ? icon='mdi-microphone' : icon='mdi-microphone-off'}}</v-icon>
                         </v-btn>
                     </template>
@@ -97,7 +106,7 @@
                 </v-tooltip>
                 <v-tooltip location="bottom">
                     <template v-slot:activator="{ props }">
-                        <v-btn class="mx-2" variant="tonal" icon @click="changeMidSessionVideo" v-bind:="props">
+                        <v-btn class="mx-2" :variant="setVariantVideo" icon @click="changeMidSessionVideo" v-bind:="props" :color="setBackgroundColorVideo">
                             <v-icon>{{ video_activate ? icon='mdi-video' : icon='mdi-video-off'}}</v-icon>
                         </v-btn>
                     </template>
@@ -220,6 +229,38 @@
             
             window.addEventListener("beforeunload", this.leaveSession);
         },
+        computed: {
+            setBackgroundColorVideo() {
+                if (this.video_activate) {
+                    return "";
+                } else {
+                    return "red";
+                }   
+            },
+            setVariantVideo() {
+                if (this.video_activate) {
+                    return 'tonal'
+                } else {
+                    return 'flat';
+                }
+            },
+            setBackgroundColorAudio() {
+                if (this.audio_activate) {
+                    return "";
+                } else {
+                    return "red";
+                }   
+            },
+            setVariantAudio() {
+                if (this.audio_activate) {
+                    console.log("Tonal");
+                    return 'tonal'                    
+                } else {
+                    console.log("nada");
+                    return 'flat';
+                }
+            }
+        },
         methods: {
             notEmpty (value) {
                 if (value != "") {
@@ -267,6 +308,14 @@
             changeMidSessionVideo() {
                 this.video_activate = !this.video_activate;
                 this.publisher.publishVideo(this.video_activate);
+            },
+            hasAudioActive(sub) {
+                console.log(sub);
+                if (sub.stream.audioActive == true) {
+                    return true;
+                } else {
+                    return false;
+                }                
             },
             connectToSession() {
                 // Inicializate tokens and connect to session
@@ -350,7 +399,6 @@
     #video-container video {
         position: relative;
         float: left;
-        cursor: pointer;
     }
     #video-container p {
         position: absolute; 
@@ -374,12 +422,17 @@
         position: relative;
         float: left;
     }
-    .button_options {
+    .circles_options {
         position: absolute;
         bottom: 0;
         z-index: 10;
         text-align: center;
+    }
+    .right {
         right: 0px;
+    }
+    .left {
+        left: 0px;
     }
     .display_session {
         display: grid;
