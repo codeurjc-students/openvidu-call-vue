@@ -3,7 +3,7 @@
     <v-container v-if="isChoosingOptions" fluid class="margin_auto">
         <v-row>
             <v-col>
-                <v-sheet class="pa-5" v-if="session">
+                <v-sheet class="pa-5" v-if="sessionPublisher">
                     <user-video :stream-manager="mainStreamManager" :key="mainStreamManager"/>                     
                 </v-sheet>
             </v-col>
@@ -58,7 +58,7 @@
                 <v-sheet rounded class="white">   
                     <user-video :stream-manager="publisher" :key="publisher" @click.native="updateMainVideoStreamManager(publisher)" />
                 </v-sheet>   
-            </v-col>     
+            </v-col>
             
             <v-col class="max_width_523" v-for="(sub, indexSub) in subscribers" :key="indexSub" id="video-container">   
                 <div class="container-video-button">           
@@ -112,15 +112,26 @@
                     </template>
                     {{ video_activate ? 'Mute your video' : 'Unmute your video'}}                    
                 </v-tooltip>
-                <v-btn class="mx-2" variant="tonal" icon>
-                    <v-icon>mdi-monitor-share</v-icon>
-                </v-btn>
-                <v-btn class="mx-2" variant="tonal" icon>
-                    <v-icon>mdi-dots-vertical</v-icon>
-                </v-btn>
-                <v-btn class="mx-2" color="red" variant="flat" rounded="normal" @click="goToHome" >
-                    <v-icon>mdi-phone-hangup</v-icon>
-                </v-btn>
+
+                <v-tooltip location="bottom">
+                    <template v-slot:activator="{ props }">
+                        <v-btn class="mx-2" :variant="setVariantShareScreen" icon @click="shareScreen" v-bind:="props" :color="setBackgroundColorShareScreen">
+                            <v-icon>mdi-monitor-share</v-icon>
+                        </v-btn>
+                    </template>
+                    {{ screen_activate ? 'Disable screen share' : 'Enable screen share' }}                    
+                </v-tooltip>
+
+                
+                <v-tooltip location="bottom">
+                    <template v-slot:activator="{ props }">
+                        <v-btn class="mx-2" color="red" variant="flat" rounded="normal" @click="goToHome" v-bind:="props">
+                            <v-icon>mdi-phone-hangup</v-icon>
+                        </v-btn>
+                    </template>
+                    Leave the session                    
+                </v-tooltip>
+
             </v-col>
         </v-row>
     </v-container>
@@ -145,12 +156,18 @@
                 nickname: 'OpenVidu_User' + Math.floor(Math.random() * 100), 
                 myUserName: '',     
 
-                // OpenVidu objects
-                OV: undefined,
-                session: undefined,
+                // OpenVidu objects publisher
+                OVPublisher: undefined,
+                sessionPublisher: undefined,
                 mainStreamManager: undefined,
                 publisher: undefined,
                 subscribers: [],
+
+                // OpenVidu objects screen share                
+                OVScreenShare: undefined,
+                sessionScreenShare: undefined,
+                publisherScreen: undefined,
+                screen_activate: false,
 
                 // Control JoinSession
                 cameras: [],
@@ -181,13 +198,15 @@
             // Initialize different components
             this.myUserName = this.nickname;
 
-            this.OV = new OpenVidu();
+            this.OVPublisher = new OpenVidu();
+            this.OVScreenShare = new OpenVidu();
 
-            this.session = this.OV.initSession();
+            this.sessionPublisher = this.OVPublisher.initSession();
+            this.sessionScreenShare = this.OVScreenShare.initSession();
 
             // Specify session´s behavior
-            this.session.on("streamCreated", ({ stream }) => {
-                const subscriber = this.session.subscribe(stream);
+            this.sessionPublisher.on("streamCreated", ({ stream }) => {
+                const subscriber = this.sessionPublisher.subscribe(stream);
                 this.subscribers.push(subscriber); 
                 this.optionsSubscriber.push(
                     [
@@ -197,7 +216,7 @@
                 );              
             });
 
-            this.session.on("streamDestroyed", ({ stream }) => {
+            this.sessionPublisher.on("streamDestroyed", ({ stream }) => {
                 const index = this.subscribers.indexOf(stream.streamManager, 0);
                 if (index >= 0) {
                     this.subscribers.splice(index, 1);
@@ -205,12 +224,24 @@
                 }                
             });
 
-            this.session.on("exception", ({ exception }) => {
+            this.sessionPublisher.on("exception", ({ exception }) => {
+                console.warn(exception);
+            });
+
+            this.sessionScreenShare.on("streamDestroyed", ({ stream }) => {
+                const index = this.subscribers.indexOf(stream.streamManager, 0);
+                if (index >= 0) {
+                    this.subscribers.splice(index, 1);
+                    this.optionsSubscriber.splice(index, 1);
+                }                
+            });
+
+            this.sessionScreenShare.on("exception", ({ exception }) => {
                 console.warn(exception);
             });
 
             // Get input sources
-            this.OV.getDevices().then(devices => {
+            this.OVPublisher.getDevices().then(devices => {
                 var videoDevices = devices.filter(device => device.kind === 'videoinput');
                 for (var numDevice in videoDevices) {
                     this.cameras.push({name: videoDevices[numDevice].label , id: videoDevices[numDevice].deviceId});
@@ -253,11 +284,23 @@
             },
             setVariantAudio() {
                 if (this.audio_activate) {
-                    console.log("Tonal");
                     return 'tonal'                    
                 } else {
-                    console.log("nada");
                     return 'flat';
+                }
+            },
+            setBackgroundColorShareScreen() {
+                if (this.screen_activate) {
+                    return "blue";
+                } else {
+                    return "";
+                }   
+            },
+            setVariantShareScreen() {
+                if (this.screen_activate) {
+                    return 'flat';                    
+                } else {
+                    return 'tonal';
                 }
             }
         },
@@ -286,7 +329,7 @@
                 }           
             },
             updateInputSource() {
-                let publisher = this.OV.initPublisher(undefined, {
+                let publisher = this.OVPublisher.initPublisher(undefined, {
                     audioSource: this.microphone, 
                     videoSource: this.camera, 
                     publishAudio: this.audio_activate, 
@@ -319,15 +362,56 @@
             },
             connectToSession() {
                 // Inicializate tokens and connect to session
-                this.initializeTokens().then(() => {                
-                    this.session.connect(this.tokens.webcam, { clientData: this.myUserName })
-                        .then(() => {                            
-                            this.session.publish(this.publisher);
+                this.initializeTokens().then(() => {
+                    this.sessionPublisher.connect(this.tokens.webcam, { clientData: this.myUserName }).then(() => {                            
+                            this.sessionPublisher.publish(this.publisher);
                     })
                     .catch((error) => {
                         console.log("There was an error connecting to the session:", error.code, error.message);
                     });
+
+                    this.sessionScreenShare.connect(this.tokens.screen, { clientData: this.myUserName })
+                    .catch((error) => {
+                        console.log("There was an error connecting to the session:", error.code, error.message);
+                    });
                 });
+            },
+            shareScreen() {                
+                if (!this.screen_activate) {                    
+                    this.publisherScreen = this.OVScreenShare.initPublisher(undefined, {
+                        videoSource: "screen", 
+                        publishAudio: false, 
+                        resolution: "523x480", 
+                        frameRate: 30, 
+                        insertMode: "APPEND", 
+                    });                        
+            
+                    this.publisherScreen.once('accessAllowed', (event)=> {
+                        this.publisherScreen.stream.getMediaStream().getVideoTracks()[0].addEventListener('ended', () => {
+                            console.log('User pressed the "Stop sharing button"');
+                            this.sessionScreenShare.unpublish(this.publisherScreen);
+                            this.publisherScreen = undefined;
+
+                            this.screen_activate = false;
+                        });
+                        
+                        
+                        
+                        this.sessionScreenShare.publish(this.publisherScreen);
+                    });
+
+
+                    this.publisherScreen.once('accessDenied', (event) => {
+                        console.warn('ScreenShare: Access Denied');
+                    });                    
+                } else {
+                    console.log("TENGO QUE DESACTIVARLO");
+                    //if (this.sessionScreenShare) this.sessionScreenShare.disconnect();
+                    this.sessionScreenShare.unpublish(this.publisherScreen);
+                    this.publisherScreen = undefined;
+                }                
+                
+                this.screen_activate = !this.screen_activate;
             },
             changePage() {
                 this.isChoosingOptions = false;
@@ -338,13 +422,17 @@
                 router.push({path: '/' })
             },
             leaveSession() {
-                if (this.session) this.session.disconnect();
+                if (this.sessionPublisher) this.sessionPublisher.disconnect();
+                if (this.sessionScreenShare) this.sessionScreenShare.disconnect();
 
-                this.session = undefined;
+                this.sessionPublisher = undefined;
+                this.sessionScreenShare = undefined;
                 this.mainStreamManager = undefined;
                 this.publisher = undefined;
+                this.publisherScreen = undefined;
                 this.subscribers = [];
-                this.OV = undefined;
+                this.OVPublisher = undefined;
+                this.OVScreenShare = undefined;
 
                 window.removeEventListener("beforeunload", this.leaveSession);
             },      
