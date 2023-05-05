@@ -64,7 +64,7 @@
                 <div class="container-video-button">           
                     <user-video :key="sub.stream.connection.connectionId" :stream-manager="sub"
                         @click.native="updateMainVideoStreamManager(sub)" />
-                    <div class="circles_options left" v-if="!hasAudioActive(sub)">
+                    <div class="circles_options left" v-if="!hasAudioActive(indexSub)">
                         <v-avatar size="small" color="red">
                             <v-icon size="small" icon="mdi-microphone-off"/>
                         </v-avatar>   
@@ -77,8 +77,8 @@
                             <v-list>
                                 <v-list-item v-for="(option, i) in optionsSubscriber[indexSub]" :key="i" :value="option" @click.stop="actionListOptionsSubscriber(option, sub)">
                                     <template v-slot:prepend v-if="option.name == 'mute'">
-                                        <v-icon :icon="option.activated ? 'mdi-volume-high' : 'mdi-volume-off'"/>
-                                        <v-list-item-title v-text="option.activated ? 'Mute sound' : 'Unmute sound'"/> 
+                                        <v-icon :icon="option.activatedLocal ? 'mdi-volume-high' : 'mdi-volume-off'"/>
+                                        <v-list-item-title v-text="option.activatedLocal ? 'Mute sound' : 'Unmute sound'"/> 
                                     </template>                                    
                                 </v-list-item>
                             </v-list>
@@ -92,7 +92,7 @@
             <v-col class="name_logo_style">
                 <div class="display_name">
                     <v-img class="image_style transparent small_image" src="@/assets/logo.png"/>           
-                    <div align-center class="text-subtitle-1" >{{myUserName}} </div>
+                    <div align-center class="text-style-session-name" >{{myUserName}} </div>
                 </div>
             </v-col>
             <v-col class="buttons_style">
@@ -140,7 +140,7 @@
 
 <script>
     import router from '@/router';
-    import { OpenVidu } from "openvidu-browser";
+    import { OpenVidu, StreamPropertyChangedEvent } from "openvidu-browser";
     import UserVideo from "../components/UserVideo.vue";
     import SessionService from "@/api/SessionService";
     
@@ -211,7 +211,8 @@
                 this.optionsSubscriber.push(
                     [
                         {name: "mute",
-                        activated: true}
+                        activated: subscriber.stream.audioActive,
+                        activatedLocal: true}
                     ]
                 );              
             });
@@ -228,17 +229,17 @@
                 console.warn(exception);
             });
 
-            this.sessionScreenShare.on("streamDestroyed", ({ stream }) => {
-                const index = this.subscribers.indexOf(stream.streamManager, 0);
-                if (index >= 0) {
-                    this.subscribers.splice(index, 1);
-                    this.optionsSubscriber.splice(index, 1);
-                }                
-            });
-
-            this.sessionScreenShare.on("exception", ({ exception }) => {
-                console.warn(exception);
-            });
+            this.sessionPublisher.on("streamPropertyChanged", ({changedProperty, stream}) => {
+                if (changedProperty === 'audioActive') {
+                    // Find the index of the stream that changed the property
+                    var indexSubscriber = this.subscribers.findIndex((element) => element.stream.streamId == stream.streamId);
+                    // Change the activated property in options mute of that subscriber
+                    if (indexSubscriber != -1) {
+                        var muteOptionOfSubscriber = this.optionsSubscriber[indexSubscriber].find((element) => element.name == 'mute');
+                        muteOptionOfSubscriber.activated = !muteOptionOfSubscriber.activated;
+                    }
+                }           
+            })
 
             // Get input sources
             this.OVPublisher.getDevices().then(devices => {
@@ -318,13 +319,13 @@
             },
             changeActiveAudio() {
                 this.audio_activate = !this.audio_activate;
-                this.updateInputSource();
+                this.updateInputSource();                
             },
             actionListOptionsSubscriber(option, subscriber) {
                 switch (option.name){
                     case 'mute': 
-                        option.activated = !option.activated;
-                        subscriber.subscribeToAudio(option.activated);
+                        option.activatedLocal = !option.activatedLocal;
+                        subscriber.subscribeToAudio(option.activatedLocal);
                         break;
                 }           
             },
@@ -352,9 +353,9 @@
                 this.video_activate = !this.video_activate;
                 this.publisher.publishVideo(this.video_activate);
             },
-            hasAudioActive(sub) {
-                console.log(sub);
-                if (sub.stream.audioActive == true) {
+            hasAudioActive(index) {
+                var muteOptionOfSubscriber = this.optionsSubscriber[index].find((element) => element.name == 'mute');
+                if (muteOptionOfSubscriber.activated) {
                     return true;
                 } else {
                     return false;
@@ -395,8 +396,6 @@
                             this.screen_activate = false;
                         });
                         
-                        
-                        
                         this.sessionScreenShare.publish(this.publisherScreen);
                     });
 
@@ -405,8 +404,6 @@
                         console.warn('ScreenShare: Access Denied');
                     });                    
                 } else {
-                    console.log("TENGO QUE DESACTIVARLO");
-                    //if (this.sessionScreenShare) this.sessionScreenShare.disconnect();
                     this.sessionScreenShare.unpublish(this.publisherScreen);
                     this.publisherScreen = undefined;
                 }                
@@ -544,6 +541,14 @@
         max-width: 20%;
         margin-right: 40px;
         position: absolute;
+    }
+    .text-style-session-name {
+        font-family: Ubuntu,sans-serif;
+        font-weight: 700;
+        font-size: 15px;
+        height: fit-content;
+        padding: 0 15px;
+        margin-top: 8px;
     }
     .buttons_style {
         margin-right: 40px;
