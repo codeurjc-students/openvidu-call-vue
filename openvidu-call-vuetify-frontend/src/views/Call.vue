@@ -140,7 +140,7 @@
 
 <script>
     import router from '@/router';
-    import { OpenVidu, StreamPropertyChangedEvent } from "openvidu-browser";
+    import { OpenVidu } from "openvidu-browser";
     import UserVideo from "../components/UserVideo.vue";
     import SessionService from "@/api/SessionService";
     
@@ -204,7 +204,7 @@
             this.sessionPublisher = this.OVPublisher.initSession();
             this.sessionScreenShare = this.OVScreenShare.initSession();
 
-            // Specify session´s behavior
+            // Specify session´s publisher behavior
             this.sessionPublisher.on("streamCreated", ({ stream }) => {
                 const subscriber = this.sessionPublisher.subscribe(stream);
                 this.subscribers.push(subscriber); 
@@ -240,6 +240,18 @@
                     }
                 }           
             })
+
+            // Specify session´s screen share behavior
+            this.sessionScreenShare.on("streamDestroyed", ({ stream }) => {
+                const index = this.subscribers.indexOf(stream.streamManager, 0);
+                if (index >= 0) {
+                    this.subscribers.splice(index, 1);
+                }                
+            });
+
+            this.sessionScreenShare.on("exception", ({ exception }) => {
+                console.warn(exception);
+            });
 
             // Get input sources
             this.OVPublisher.getDevices().then(devices => {

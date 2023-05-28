@@ -18,7 +18,7 @@
     "unique-names-generator": "^4.7.1",
     "vue": "^3.2.13",
     "vue-router": "^4.0.0",
-    "vuetify": "^3.0.0",
+    "vuetify": "^3.2.2",
     "webfontloader": "^1.0.0"
   },
   "devDependencies": {

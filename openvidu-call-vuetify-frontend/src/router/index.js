@@ -6,7 +6,7 @@ import AuthService from '@/api/AuthService';
 
 const routes = [
   {
-    path: '/',
+    path: '',
     name: 'Home',
     component: Home,
   },
