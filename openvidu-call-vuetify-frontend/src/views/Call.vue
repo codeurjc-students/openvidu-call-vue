@@ -52,43 +52,43 @@
     </v-container>
 
     <!-- SESSION -->
-    <v-container v-else class="bg-surface-variant display_session" fluid>
-        <v-row>
-            <v-col class="max_width_523" id="video-container">   
-                <v-sheet rounded class="white">   
-                    <user-video :stream-manager="publisher" :key="publisher" @click.native="updateMainVideoStreamManager(publisher)" />
-                </v-sheet>   
-            </v-col>
-            
-            <v-col class="max_width_523" v-for="(sub, indexSub) in subscribers" :key="indexSub" id="video-container">   
-                <div class="container-video-button">           
-                    <user-video :key="sub.stream.connection.connectionId" :stream-manager="sub"
-                        @click.native="updateMainVideoStreamManager(sub)" />
-                    <div class="circles_options left" v-if="!hasAudioActive(indexSub)">
-                        <v-avatar size="small" color="red">
-                            <v-icon size="small" icon="mdi-microphone-off"/>
-                        </v-avatar>   
+    <v-container v-else class="bg-surface-variant display_session" fluid style="flex-direction: column;">
+        <v-row style="height: 100%;">            
+            <v-col id="video-container" style="height: 100%; width: 100%">     
+                <div id="layout" class="layout"> 
+                    <user-video class="OT_root OT_publisher" :stream-manager="publisher" :key="publisher" @click.native="updateMainVideoStreamManager(publisher)" />
+                    
+                    <div class="OT_root OT_subscriber" v-for="(sub, indexSub) in subscribers" :key="indexSub">
+                        <user-video :key="sub.stream.connection.connectionId" :stream-manager="sub"
+                            @click.native="updateMainVideoStreamManager(sub)" style="height: 100%;"/>
+                        <div class="circles_options left" v-if="!hasAudioActive(indexSub)">
+                            <v-avatar size="x-small" color="red">
+                                <v-icon size="x-small" icon="mdi-microphone-off"/>
+                            </v-avatar>   
+                        </div>
+                        <div class="circles_options right">
+                            <v-menu>
+                                <template v-slot:activator="{ props }">
+                                    <v-btn class="background_tonal" variant="tonal" size="x-small" icon v-bind="props">
+                                        <v-icon size="x-small" icon="mdi-dots-vertical"/>
+                                    </v-btn>
+                                </template>
+                                <v-list size="x-small">
+                                    <v-list-item v-for="(option, i) in optionsSubscriber[indexSub]" :key="i" :value="option" @click.stop="actionListOptionsSubscriber(option, sub)">
+                                        <template v-slot:prepend v-if="option.name == 'mute'">
+                                            <v-icon :icon="option.activatedLocal ? 'mdi-volume-high' : 'mdi-volume-off'"/>
+                                            <v-list-item-title v-text="option.activatedLocal ? 'Mute sound' : 'Unmute sound'"/> 
+                                        </template>                                    
+                                    </v-list-item>
+                                </v-list>
+                            </v-menu>
+                        </div>
                     </div>
-                    <div class="circles_options right">
-                        <v-menu>
-                            <template v-slot:activator="{ props }">
-                                <v-btn class="background_tonal" variant="tonal" size="x-small" icon="mdi-dots-vertical" v-bind="props"/>
-                            </template>
-                            <v-list>
-                                <v-list-item v-for="(option, i) in optionsSubscriber[indexSub]" :key="i" :value="option" @click.stop="actionListOptionsSubscriber(option, sub)">
-                                    <template v-slot:prepend v-if="option.name == 'mute'">
-                                        <v-icon :icon="option.activatedLocal ? 'mdi-volume-high' : 'mdi-volume-off'"/>
-                                        <v-list-item-title v-text="option.activatedLocal ? 'Mute sound' : 'Unmute sound'"/> 
-                                    </template>                                    
-                                </v-list-item>
-                            </v-list>
-                        </v-menu>
-                    </div>
-                </div>
+                </div>    
             </v-col>
         </v-row>
-
-        <v-row align="end" align-self="end" no-gutters >
+   
+        <v-row align="end" align-self="end" no-gutters>
             <v-col class="name_logo_style">
                 <div class="display_name">
                     <v-img class="image_style transparent small_image" src="@/assets/logo.png"/>           
@@ -133,7 +133,7 @@
                 </v-tooltip>
 
             </v-col>
-        </v-row>
+        </v-row> 
     </v-container>
 
 </template>
@@ -143,6 +143,7 @@
     import { OpenVidu } from "openvidu-browser";
     import UserVideo from "../components/UserVideo.vue";
     import SessionService from "@/api/SessionService";
+    import initLayoutContainer from 'opentok-layout-js'
     
     export default{
         components: {
@@ -190,7 +191,8 @@
 
                 // Control session
                 isChoosingOptions: true,
-                optionsSubscriber: []
+                optionsSubscriber: [],
+                layout: undefined
 
             }
         },        
@@ -205,23 +207,25 @@
             this.sessionScreenShare = this.OVScreenShare.initSession();
 
             // Specify session´s publisher behavior
-            this.sessionPublisher.on("streamCreated", ({ stream }) => {
+            this.sessionPublisher.on("streamCreated", async ({ stream }) => {
                 const subscriber = this.sessionPublisher.subscribe(stream);
                 this.subscribers.push(subscriber); 
-                this.optionsSubscriber.push(
+                await this.optionsSubscriber.push(
                     [
                         {name: "mute",
                         activated: subscriber.stream.audioActive,
                         activatedLocal: true}
                     ]
-                );              
+                );          
+                this.updateLayout();    
             });
 
-            this.sessionPublisher.on("streamDestroyed", ({ stream }) => {
+            this.sessionPublisher.on("streamDestroyed", async ({ stream }) => {
                 const index = this.subscribers.indexOf(stream.streamManager, 0);
                 if (index >= 0) {
                     this.subscribers.splice(index, 1);
-                    this.optionsSubscriber.splice(index, 1);
+                    await this.optionsSubscriber.splice(index, 1);
+                    this.updateLayout();  
                 }                
             });
 
@@ -347,7 +351,6 @@
                     videoSource: this.camera, 
                     publishAudio: this.audio_activate, 
                     publishVideo: this.video_activate, 
-                    resolution: "523x480", 
                     frameRate: 30, 
                     insertMode: "APPEND", 
                     mirror: false, 
@@ -394,7 +397,6 @@
                     this.publisherScreen = this.OVScreenShare.initPublisher(undefined, {
                         videoSource: "screen", 
                         publishAudio: false, 
-                        resolution: "523x480", 
                         frameRate: 30, 
                         insertMode: "APPEND", 
                     });                        
@@ -422,10 +424,37 @@
                 
                 this.screen_activate = !this.screen_activate;
             },
-            changePage() {
+            async changePage() {
                 this.isChoosingOptions = false;
-                this.connectToSession();                                    
-            },      
+                await this.connectToSession();       
+                this.initiateOpentokLayout();                     
+            },    
+            initiateOpentokLayout() {
+                window.onresize = () => {
+                    this.updateLayout();
+                }
+
+                var layoutContainer = document.getElementById("layout");
+                var layoutOptions = {
+                    maxRatio: 3 / 2,      // The narrowest ratio that will be used (default 2x3)
+                    minRatio: 9 / 20,     // The widest ratio that will be used (default 16x9)
+                    fixedRatio: false,    /* If this is true then the aspect ratio of the video is maintained
+                    and minRatio and maxRatio are ignored (default false) */
+                    bigClass: 'OV_big',   // The class to add to elements that should be sized bigger
+                    bigPercentage: 0.8,   // The maximum percentage of space the big ones should take up
+                    bigFixedRatio: false, // fixedRatio for the big ones
+                    bigMaxRatio: 3 / 2,   // The narrowest ratio to use for the big elements (default 2x3)
+                    bigMinRatio: 9 / 16,  // The widest ratio to use for the big elements (default 16x9)
+                    bigFirst: true,       // Whether to place the big one in the top left (true) or bottom right
+                    smallAlignItems: 'center', // How to align the small row or column of items if there is a big one
+                };
+
+                this.layout = initLayoutContainer(layoutContainer, layoutOptions);
+                this.layout.layout();
+            },
+            updateLayout() {
+                this.layout.layout();
+            },
             goToHome() {
                 this.leaveSession();
                 router.push({path: '/' })
@@ -448,6 +477,7 @@
             updateMainVideoStreamManager(stream) {
                 if (this.mainStreamManager === stream) return;
                 this.mainStreamManager = stream;
+                withScopeId.updateLayout();
             },
             async initializeTokens() {
                 var nick = "";
@@ -468,6 +498,45 @@
 </script>
 
 <style>
+  .layout {
+      position: relative;
+      left: 0;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      min-width: 350px !important;
+      min-height: 100%;
+      width: inherit;
+      height: 100% !important;
+      max-height: 100%;
+  }
+  .OT_root,
+  .OT_root * {
+      color: #ffffff;
+      margin: 0;
+      padding: 0;
+      border: 0;
+      font-size: 100%;
+      vertical-align: baseline;
+      max-height: 100%;
+  }
+  .OT_publisher,
+  .OT_subscriber {
+      position: relative;
+      min-width: 0px;
+      min-height: 0px;
+      padding: 3px;      
+      transition-duration: 0.5s;
+      transition-timing-function: ease-in-out;
+  }
+  .OT_publisher .OT_video-element,
+  .OT_subscriber .OT_video-element {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transform-origin: 0 0;
+  }
     .col_center {
         place-content: center;
         align-items: center;
@@ -486,9 +555,6 @@
     .banner_style {
         margin-bottom: 10px;
         font-weight: 700;
-    }
-    .max_width_523 {
-        max-width: 523px !important;
     }
     .white {
         color:white;
@@ -513,17 +579,15 @@
     }
     video {
         width: 100%;
-        height: auto;
-    }
-    .container-video-button {
-        position: relative;
-        float: left;
+        height: 100%;
     }
     .circles_options {
         position: absolute;
         bottom: 0;
         z-index: 10;
         text-align: center;
+        width: 25px;
+        height: 25px;
     }
     .right {
         right: 0px;
@@ -532,7 +596,7 @@
         left: 0px;
     }
     .display_session {
-        display: grid;
+        display: flex;
         height: 100%;
     }
     .small_image {
