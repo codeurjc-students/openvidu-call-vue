@@ -186,6 +186,7 @@
         goToVideoCall () {
           if (this.validationForm) {
             this.sessionName = this.sessionName.replace(/ /g, '-');
+            this.sessionName = this.sessionName.replace(/[^a-zA-Z-]/g, '');
             router.push({path: '/' + this.sessionName})
           }
         },
@@ -204,62 +205,62 @@
 </script>
 
 <style>
-.v-sheet {
-  background: transparent !important;
-}
-.background_component {
-  background: linear-gradient(
-    rgba(255,255,255,.2),
-    rgba(255,255,255,.2)),
-    url('@/assets/background_mountain.jpg') top center no-repeat;
-  background-size: cover;
-  height: 100%;
-  text-align: center;
-  position: relative;
-}
-.transparent {
-  background: transparent !important;
-}
-.image_style {
-  max-width: 290px;
-  margin-right: 10px;
-  margin-top: 10px;
-  padding: 15px;
-  width: 290px;
-}
-.subtitle_style {
-  font-size: 25px !important;
-  font-weight: 300 !important;
-  color: #fff;
-  position: relative;
-  padding-bottom: 5px;
+  .v-sheet {
+    background: transparent !important;
+  }
+  .background_component {
+    background: linear-gradient(
+      rgba(255,255,255,.2),
+      rgba(255,255,255,.2)),
+      url('@/assets/background_mountain.jpg') top center no-repeat;
+    background-size: cover;
+    height: 100%;
+    text-align: center;
+    position: relative;
+  }
+  .transparent {
+    background: transparent !important;
+  }
+  .image_style {
+    max-width: 290px;
+    margin-right: 10px;
+    margin-top: 10px;
+    padding: 15px;
+    width: 290px;
+  }
+  .subtitle_style {
+    font-size: 25px !important;
+    font-weight: 300 !important;
+    color: #fff;
+    position: relative;
+    padding-bottom: 5px;
 
-  font: 400 15px/24px Roboto,Helvetica Neue,sans-serif;
-  letter-spacing: normal;
-  margin: 0 0 16px;
-}
-.margin_block {
-  inline-size: 90%;
-  margin-inline: auto;
-  max-inline-size: 26rem;
-}
-.margin_element {
-  margin-top: 8%;
-}
-.element_col {
-  width: 100%;
-  height: 50px;
-}
-.logout_style {
-  right: 15px;
-  position: absolute;
-  font-size: 13px;
-  color: #fff;
-}
-.roomError {
-	font-size: 14px;
-	color: #700;	
-	text-align: left;
-	font-weight: 600;
-}
+    font: 400 15px/24px Roboto,Helvetica Neue,sans-serif;
+    letter-spacing: normal;
+    margin: 0 0 16px;
+  }
+  .margin_block {
+    inline-size: 90%;
+    margin-inline: auto;
+    max-inline-size: 26rem;
+  }
+  .margin_element {
+    margin-top: 8%;
+  }
+  .element_col {
+    width: 100%;
+    height: 50px;
+  }
+  .logout_style {
+    right: 15px;
+    position: absolute;
+    font-size: 13px;
+    color: #fff;
+  }
+  .roomError {
+    font-size: 14px;
+    color: #700;	
+    text-align: left;
+    font-weight: 600;
+  }
 </style>

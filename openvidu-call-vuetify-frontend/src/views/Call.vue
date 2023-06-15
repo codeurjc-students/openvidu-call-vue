@@ -56,9 +56,38 @@
         <v-row style="height: 100%;">            
             <v-col id="video-container" style="height: 100%; width: 100%">     
                 <div id="layout" class="layout"> 
-                    <user-video class="OT_root OT_publisher" :stream-manager="publisher" :key="publisher" @click.native="updateMainVideoStreamManager(publisher)" />
-                    
-                    <div class="OT_root OT_subscriber" v-for="(sub, indexSub) in subscribers" :key="indexSub">
+                    <div class="OT_root OT_publisher" id="Publisher">
+                        <user-video :stream-manager="publisher" :key="publisher" @click.native="updateMainVideoStreamManager(publisher)" style="height: 100%;" />
+                        <div class="circles_options left" v-if="!audio_activate">
+                            <v-avatar size="x-small" color="red">
+                                <v-icon size="x-small" icon="mdi-microphone-off"/>
+                            </v-avatar> 
+                        </div>
+                        <div class="circles_options right">
+                            <v-menu>
+                                <template v-slot:activator="{ props: menu }">
+                                    <v-tooltip location="top">
+                                        <template v-slot:activator="{ props: tooltip }">
+                                            <v-btn class="background_tonal" variant="tonal" size="x-small" icon v-bind="mergeProps(menu, tooltip)">
+                                                <v-icon size="x-small" icon="mdi-dots-vertical"/>
+                                            </v-btn>
+                                        </template>
+                                        <span>Settings</span>
+                                    </v-tooltip>                                        
+                                </template>
+                                <v-list size="x-small">
+                                    <v-list-item v-for="(option, i) in optionsPublisher" :key="i" :value="option" @click.stop="actionListOptions(option, publisher)">      
+                                        <template v-slot:prepend v-if="option.name == 'zoom'">
+                                            <v-icon icon='mdi-magnify-plus-outline'/>
+                                            <v-list-item-title v-text="'Zoom in'"/> 
+                                        </template>                              
+                                    </v-list-item>
+                                </v-list>
+                            </v-menu>
+                        </div>
+                    </div>
+
+                    <div class="OT_root OT_subscriber" :id="sub.stream.connection.connectionId" v-for="(sub, indexSub) in subscribers" :key="indexSub">
                         <user-video :key="sub.stream.connection.connectionId" :stream-manager="sub"
                             @click.native="updateMainVideoStreamManager(sub)" style="height: 100%;"/>
                         <div class="circles_options left" v-if="!hasAudioActive(indexSub)">
@@ -68,17 +97,26 @@
                         </div>
                         <div class="circles_options right">
                             <v-menu>
-                                <template v-slot:activator="{ props }">
-                                    <v-btn class="background_tonal" variant="tonal" size="x-small" icon v-bind="props">
-                                        <v-icon size="x-small" icon="mdi-dots-vertical"/>
-                                    </v-btn>
+                                <template v-slot:activator="{ props: menu }">
+                                    <v-tooltip location="top">
+                                        <template v-slot:activator="{ props: tooltip }">
+                                            <v-btn class="background_tonal" variant="tonal" size="x-small" icon v-bind="mergeProps(menu, tooltip)">
+                                                <v-icon size="x-small" icon="mdi-dots-vertical"/>
+                                            </v-btn>
+                                        </template>
+                                        <span>Settings</span>
+                                    </v-tooltip>                                        
                                 </template>
                                 <v-list size="x-small">
-                                    <v-list-item v-for="(option, i) in optionsSubscriber[indexSub]" :key="i" :value="option" @click.stop="actionListOptionsSubscriber(option, sub)">
+                                    <v-list-item v-for="(option, i) in optionsSubscriber[indexSub]" :key="i" :value="option" @click.stop="actionListOptions(option, sub)">
                                         <template v-slot:prepend v-if="option.name == 'mute'">
                                             <v-icon :icon="option.activatedLocal ? 'mdi-volume-high' : 'mdi-volume-off'"/>
                                             <v-list-item-title v-text="option.activatedLocal ? 'Mute sound' : 'Unmute sound'"/> 
-                                        </template>                                    
+                                        </template>          
+                                        <template v-slot:prepend v-if="option.name == 'zoom'">
+                                            <v-icon icon='mdi-magnify-plus-outline'/>
+                                            <v-list-item-title v-text="'Zoom in'"/> 
+                                        </template>                              
                                     </v-list-item>
                                 </v-list>
                             </v-menu>
@@ -144,6 +182,7 @@
     import UserVideo from "../components/UserVideo.vue";
     import SessionService from "@/api/SessionService";
     import initLayoutContainer from 'opentok-layout-js'
+    import { mergeProps } from 'vue';
     
     export default{
         components: {
@@ -191,6 +230,7 @@
 
                 // Control session
                 isChoosingOptions: true,
+                optionsPublisher: [],
                 optionsSubscriber: [],
                 layout: undefined
 
@@ -206,6 +246,12 @@
             this.sessionPublisher = this.OVPublisher.initSession();
             this.sessionScreenShare = this.OVScreenShare.initSession();
 
+            this.optionsPublisher.push(                
+                {name: "zoom",
+                activatedLocal: false,                           
+                }                
+            );          
+
             // Specify session´s publisher behavior
             this.sessionPublisher.on("streamCreated", async ({ stream }) => {
                 const subscriber = this.sessionPublisher.subscribe(stream);
@@ -214,7 +260,10 @@
                     [
                         {name: "mute",
                         activated: subscriber.stream.audioActive,
-                        activatedLocal: true}
+                        activatedLocal: true},
+                        {name: "zoom",
+                        activatedLocal: false,                           
+                        }
                     ]
                 );          
                 this.updateLayout();    
@@ -329,6 +378,7 @@
                     this.nickname = this.myUserName;
                 }
             },
+            mergeProps,
             changeActiveVideo() {
                 this.video_activate = !this.video_activate;
                 this.updateInputSource();
@@ -337,11 +387,20 @@
                 this.audio_activate = !this.audio_activate;
                 this.updateInputSource();                
             },
-            actionListOptionsSubscriber(option, subscriber) {
+            async actionListOptions(option, user) {
                 switch (option.name){
                     case 'mute': 
                         option.activatedLocal = !option.activatedLocal;
-                        subscriber.subscribeToAudio(option.activatedLocal);
+                        user.subscribeToAudio(option.activatedLocal);
+                        break;
+                    case 'zoom': 
+                        option.activatedLocal = !option.activatedLocal;
+                        if (user.stream.connection.connectionId == this.publisher.stream.connection.connectionId) {
+                            document.getElementById("Publisher").classList.toggle('OV_big');
+                        } else {
+                            document.getElementById(user.stream.connection.connectionId).classList.toggle('OV_big');
+                        }
+                        this.updateLayout();
                         break;
                 }           
             },
@@ -416,6 +475,7 @@
 
                     this.publisherScreen.once('accessDenied', (event) => {
                         console.warn('ScreenShare: Access Denied');
+                        this.screen_activate = false;
                     });                    
                 } else {
                     this.sessionScreenShare.unpublish(this.publisherScreen);
@@ -438,6 +498,7 @@
                 var layoutOptions = {
                     maxRatio: 3 / 2,      // The narrowest ratio that will be used (default 2x3)
                     minRatio: 9 / 20,     // The widest ratio that will be used (default 16x9)
+                    scaleLastRow: true,   // If there are less elements on the last row then we can scale them up to take up more space
                     fixedRatio: false,    /* If this is true then the aspect ratio of the video is maintained
                     and minRatio and maxRatio are ignored (default false) */
                     bigClass: 'OV_big',   // The class to add to elements that should be sized bigger
@@ -588,6 +649,7 @@
         text-align: center;
         width: 25px;
         height: 25px;
+        margin: 5px;
     }
     .right {
         right: 0px;
