@@ -4,7 +4,7 @@
 
     <div class="logout_style" v-if="isUserLogged">
         <label>Hi {{ username }}, do you want to logout?</label>
-        <v-btn icon variant="flat" class="transparent" @click="logout">
+        <v-btn data-testid="logout-button" icon variant="flat" class="transparent" @click="logout">
           <v-icon color="white">mdi-logout</v-icon>
         </v-btn>
     </div>
@@ -97,7 +97,7 @@
                     <template v-slot:append-inner>
                       <v-tooltip location="bottom">
                         <template v-slot:activator="{ props }">
-                          <v-icon v-bind:="props" icon="mdi-cached" @click="generateSessionName"/>
+                          <v-icon data-testid="generate-name" v-bind:="props" icon="mdi-cached" @click="generateSessionName"/>
                         </template>
                         Generate new session name
                       </v-tooltip>

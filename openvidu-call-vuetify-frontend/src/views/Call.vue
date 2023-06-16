@@ -163,7 +163,7 @@
                 
                 <v-tooltip location="bottom">
                     <template v-slot:activator="{ props }">
-                        <v-btn class="mx-2" color="red" variant="flat" rounded="normal" @click="goToHome" v-bind:="props">
+                        <v-btn data-testid="leave-session-button" class="mx-2" color="red" variant="flat" rounded="normal" @click="goToHome" v-bind:="props">
                             <v-icon>mdi-phone-hangup</v-icon>
                         </v-btn>
                     </template>
