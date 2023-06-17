@@ -142,7 +142,7 @@
                   return true
                 } else {
                   this.validationForm = false;
-                  if (value?.length < 6) {
+                  if (value?.length < 6 && value?.length != 0) {
                     return 'Session name is too short!'
                   } else {
                     return "Session name is required"
