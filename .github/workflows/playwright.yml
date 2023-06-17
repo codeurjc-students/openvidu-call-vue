@@ -10,6 +10,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
+    - name: Run the build process with Docker
+      run: 
+        sudo docker run -p 4443:4443 --rm -e OPENVIDU_SECRET=MY_SECRET openvidu/openvidu-dev:2.27.0
+        cd openvidu-call-back-java
+        mvn install
+        mvn spring-boot:run
+        cd ../openvidu-call-vuetify-frontend
+        npm install
+        npm run dev
     - uses: actions/setup-node@v3
       with:
         node-version: 16
