@@ -18,7 +18,7 @@ jobs:
         mvn spring-boot:run &
         cd ../openvidu-call-vuetify-frontend
         npm install
-        npm run dev
+        npm run dev & 
     - uses: actions/setup-node@v3
       with:
         node-version: 16
