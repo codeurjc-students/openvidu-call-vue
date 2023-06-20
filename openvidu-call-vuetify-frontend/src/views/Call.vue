@@ -52,12 +52,12 @@
     </v-container>
 
     <!-- SESSION -->
-    <v-container v-else class="bg-surface-variant display_session" fluid style="flex-direction: column;">
-        <v-row style="height: 100%;">            
-            <v-col id="video-container" style="height: 100%; width: 100%">     
+    <v-container v-else class="bg-surface-variant display_session" fluid>
+        <v-row class="all_height">            
+            <v-col id="video-container" class="all_height all_width">     
                 <div id="layout" class="layout"> 
                     <div class="OT_root OT_publisher" id="Publisher">
-                        <user-video :stream-manager="publisher" :key="publisher" @click.native="updateMainVideoStreamManager(publisher)" style="height: 100%;" />
+                        <user-video :stream-manager="publisher" :key="publisher" @click.native="updateMainVideoStreamManager(publisher)" class="all_height" />
                         <div class="circles_options left" v-if="!audio_activate">
                             <v-avatar size="x-small" color="red">
                                 <v-icon size="x-small" icon="mdi-microphone-off"/>
@@ -87,9 +87,9 @@
                         </div>
                     </div>
 
-                    <div class="OT_root OT_subscriber" :id="sub.stream.connection.connectionId" v-for="(sub, indexSub) in subscribers" :key="indexSub">
+                    <div class="OT_root OT_subscriber" :class="setScreenBigClassFirstTime(sub, indexSub)" :id="sub.stream.connection.connectionId" v-for="(sub, indexSub) in subscribers" :key="indexSub">
                         <user-video :key="sub.stream.connection.connectionId" :stream-manager="sub"
-                            @click.native="updateMainVideoStreamManager(sub)" style="height: 100%;"/>
+                            @click.native="updateMainVideoStreamManager(sub)" class="all_height"/>
                         <div class="circles_options left" v-if="!hasAudioActive(indexSub)">
                             <v-avatar size="x-small" color="red">
                                 <v-icon size="x-small" icon="mdi-microphone-off"/>
@@ -114,8 +114,8 @@
                                             <v-list-item-title v-text="option.activatedLocal ? 'Mute sound' : 'Unmute sound'"/> 
                                         </template>          
                                         <template v-slot:prepend v-if="option.name == 'zoom'">
-                                            <v-icon icon='mdi-magnify-plus-outline'/>
-                                            <v-list-item-title v-text="'Zoom in'"/> 
+                                            <v-icon :icon="option.activatedLocal ? 'mdi-magnify-minus-outline' : 'mdi-magnify-plus-outline'"/>
+                                            <v-list-item-title v-text="option.activatedLocal ? 'Zoom out' : 'Zoom in'"/> 
                                         </template>                              
                                     </v-list-item>
                                 </v-list>
@@ -266,7 +266,7 @@
                         }
                     ]
                 );          
-                this.updateLayout();    
+                this.updateLayout();      
             });
 
             this.sessionPublisher.on("streamDestroyed", async ({ stream }) => {
@@ -378,6 +378,14 @@
                     this.nickname = this.myUserName;
                 }
             },
+            setScreenBigClassFirstTime(subscriber, indexSubscriber) {
+                if (subscriber.stream.typeOfVideo == "SCREEN") {
+                    this.optionsSubscriber[indexSubscriber].find(element => element.name == "zoom").activatedLocal = true;
+                    return 'OV_big';
+                } else {
+                    return '';
+                }
+            },
             mergeProps,
             changeActiveVideo() {
                 this.video_activate = !this.video_activate;
@@ -387,7 +395,7 @@
                 this.audio_activate = !this.audio_activate;
                 this.updateInputSource();                
             },
-            async actionListOptions(option, user) {
+            actionListOptions(option, user) {
                 switch (option.name){
                     case 'mute': 
                         option.activatedLocal = !option.activatedLocal;
@@ -412,7 +420,7 @@
                     publishVideo: this.video_activate, 
                     frameRate: 30, 
                     insertMode: "APPEND", 
-                    mirror: false, 
+                    mirror: true, 
                 });
 
                 this.mainStreamManager = publisher;
@@ -511,7 +519,7 @@
                 };
 
                 this.layout = initLayoutContainer(layoutContainer, layoutOptions);
-                this.layout.layout();
+                this.updateLayout();
             },
             updateLayout() {
                 this.layout.layout();
@@ -596,7 +604,6 @@
       width: 100%;
       height: 100%;
       object-fit: cover;
-      transform-origin: 0 0;
   }
     .col_center {
         place-content: center;
@@ -616,9 +623,6 @@
     .banner_style {
         margin-bottom: 10px;
         font-weight: 700;
-    }
-    .white {
-        color:white;
     }
     #video-container video {
         position: relative;
@@ -660,6 +664,13 @@
     .display_session {
         display: flex;
         height: 100%;
+        flex-direction: column;
+    }
+    .all_height {
+        height: 100%;
+    }
+    .all_width {
+        width: 100%;
     }
     .small_image {
         max-width: 35px;
