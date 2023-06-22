@@ -4,6 +4,8 @@ WORKDIR /usr/share/node/app
 
 COPY openvidu-call-vuetify-frontend/src /usr/share/node/app/src 
 COPY openvidu-call-vuetify-frontend/package.json /usr/share/node/app/package.json
+COPY openvidu-call-vuetify-frontend/index.html /usr/share/node/app/index.html
+COPY openvidu-call-vuetify-frontend/vite.config.js /usr/share/node/app/vite.config.js
 
 RUN npm install
 
