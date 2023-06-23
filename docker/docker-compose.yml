@@ -1,0 +1,14 @@
+version: "3.9"
+
+services:
+  web:
+    image: openvidu-vue
+    restart: always
+    ports:
+      - 5000:5000
+  ovserver:
+    image: openvidu/openvidu-dev:2.27.0
+    environment:
+      - OPENVIDU_SECRET=MY_SECRET
+    ports:
+      - 4443:4443

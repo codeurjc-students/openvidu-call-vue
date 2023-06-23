@@ -17,7 +17,8 @@ WORKDIR /usr/share/app
 
 COPY openvidu-call-back-java/pom.xml /usr/share/app/pom.xml
 COPY openvidu-call-back-java/src /usr/share/app/src
-COPY --from=node_compiler /usr/share/node/app/dist/* /usr/share/app/src/main/resources/static/
+COPY --from=node_compiler /usr/share/node/app/dist/ /usr/share/app/src/main/resources/static/
+
 RUN mvn clean install package
 
 FROM openjdk:11-jre-slim
