@@ -4,11 +4,20 @@ services:
   web:
     image: openvidu-vue
     restart: always
+    environment:
+      - OPENVIDU_URL=http://ovserver:4443
     ports:
       - 5000:5000
+    networks:
+      - openvidu_network
   ovserver:
     image: openvidu/openvidu-dev:2.27.0
     environment:
       - OPENVIDU_SECRET=MY_SECRET
     ports:
       - 4443:4443
+    networks:
+      - openvidu_network
+
+networks:
+  openvidu_network:
