@@ -69,6 +69,14 @@ The name "openvidu-vue" can be substitute to another one, but it would be necces
 docker-compose up
 ```
 
+3. Start using your aplication in the page [http://localhost:5000/](http://localhost:5000/). If it does not work it is recommended to access to the same port via Docker Desktop if you are in Windows.
+
+4. Use the next user and password to dive into the rest of the application: 
+
+   **User:** admin
+   
+   **Password:** MY_SECRET
+
 ## Dependencies
 * 	[Git](https://git-scm.com/download/win)
 * 	[Docker](https://www.docker.com/)
