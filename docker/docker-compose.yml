@@ -5,7 +5,7 @@ services:
     image: openvidu-vue
     restart: always
     environment:
-      - OPENVIDU_URL=http://ovserver:4443
+      - OPENVIDU_URL_PARAM=http://ovserver:4443
     ports:
       - 5000:5000
     networks:
