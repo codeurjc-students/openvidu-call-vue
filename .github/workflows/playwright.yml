@@ -29,9 +29,9 @@ jobs:
     - name: Install Playwright Browsers
       run: npx playwright install 
     - name: Run Playwright tests
-      run: 
+      run: |
         cd tests
-        npx playwright test
+        npx playwright tests.spec.js
     - uses: actions/upload-artifact@v3
       if: always()
       with:
