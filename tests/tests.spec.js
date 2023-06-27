@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect, chromium } = require('@playwright/test');
-const ROUTE = 'http://127.0.0.1:3000/';
+const ROUTE = 'http://localhost:3000/';
 const ROOM_NAME = "Sala-de-prueba";
 
 test('login text fields check', async({page}) => {
