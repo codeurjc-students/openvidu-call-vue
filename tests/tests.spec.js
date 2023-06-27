@@ -122,7 +122,7 @@ test('options functionality', async() => {
     return microphonesItems.indexOf(item) === index && item != '' && !cameraItems.includes(item);
   });
 
-  var numberOfMicrophones = filteredMicrophones.length;
+  var numberOfMicrophones = await filteredMicrophones.length;
   await expect(numberOfMicrophones).toBeGreaterThan(0);
   await page.getByRole('listbox').locator('div').last().click();
 });
