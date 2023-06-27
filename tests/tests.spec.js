@@ -1,9 +1,9 @@
 // @ts-check
-const { test, expect } = require('@playwright/test');
+const { test, expect, chromium } = require('@playwright/test');
 const ROUTE = 'http://127.0.0.1:3000/';
 const ROOM_NAME = "Sala-de-prueba";
 
-test('login text fields check', async({page, context}) => {
+test('login text fields check', async({page}) => {
     await page.goto(ROUTE);
     // Check login button is not active
     await expect(page.getByText("LOGIN")).toBeDisabled();
@@ -70,11 +70,22 @@ test('room name functionality', async({page, context}) => {
 
 });
 
-test('options functionality', async({page, context}) => {
-  // Grant permisions
-  await context.grantPermissions(['camera', 'microphone']);
+test('options functionality', async() => {
+  // Launch browser with fake media devices
+  // @ts-ignore
+  const browser = await chromium.launch({ headless: true , deviceScaleFactor: 1, 
+    userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.182 Safari/537.36', 
+    args : ["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream"]
+  });
 
-  // Pass for every 
+  // Grant permisions
+  const context = await browser.newContext({
+    permissions: ['camera', 'microphone'],
+  });
+
+  const page = await context.newPage();
+
+  // Go to the page
   await page.goto(ROUTE);
 
   // Put credentials
@@ -92,16 +103,15 @@ test('options functionality', async({page, context}) => {
   await page.getByRole('textbox').filter({ hasText: 'Video device' }).click();
   var promiseCamerasItems = page.getByRole('listbox').locator('div').allTextContents();
   var cameraItems = await promiseCamerasItems;
-
   // Filter the items based on their names
-  const filteredCameras = cameraItems.filter((item, index) => {
+  const filteredCameras = await cameraItems.filter((item, index) => {
     return cameraItems.indexOf(item) === index && item != '';
   });
 
-  var numberOfCameras = filteredCameras.length;
-  await expect(numberOfCameras).toBeGreaterThan(0);
-  await page.getByRole('listbox').locator('div').last().click();
+  var numberOfCameras = await filteredCameras.length;
 
+  expect(numberOfCameras).toBeGreaterThan(0);
+  await page.getByRole('listbox').locator('div').last().click();
 
   // Microphones
   await page.getByRole('textbox').filter({ hasText: 'Audio device' }).click();
@@ -117,10 +127,22 @@ test('options functionality', async({page, context}) => {
   await page.getByRole('listbox').locator('div').last().click();
 });
 
-test('end-to-end', async ({ context }) => {
-  await context.grantPermissions(['camera', 'microphone']);
+test('end-to-end', async () => {
+  // Launch browser with fake media devices
+  // @ts-ignore
+  const browser = await chromium.launch({ headless: true , deviceScaleFactor: 1, 
+    userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.182 Safari/537.36', 
+    args : ["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream"]
+  });
+
+  // Grant permisions
+  const context = await browser.newContext({
+    permissions: ['camera', 'microphone'],
+  });
 
   const pageOne = await context.newPage();
+
+  // Go to the page
   await pageOne.goto(ROUTE);
 
   // Put credentials
@@ -147,7 +169,7 @@ test('end-to-end', async ({ context }) => {
     const subscriberElements = document.querySelectorAll('.OT_root.OT_subscriber');
     return subscriberElements.length;
   });
-  await expect(numberOfSubscribers).toBe(1);
+  await expect(await numberOfSubscribers).toBe(1);
 
   // Disconect second user
   await pageTwo.getByTestId("leave-session-button").click();
@@ -158,10 +180,12 @@ test('end-to-end', async ({ context }) => {
     const subscriberElements = document.querySelectorAll('.OT_root.OT_subscriber');
     return subscriberElements.length;
   });
-  await expect(numberOfSubscribers).toBe(0);
+  await expect(await numberOfSubscribers).toBe(0);
 
   // User two checks to exit the user session and check that is in the login page
   await pageTwo.getByTestId("logout-button").click();
-  await pageOne.getByText("LOGIN");
+  await pageTwo.getByText("LOGIN");
 
+  // Disconect first user
+  await pageOne.getByTestId("leave-session-button").click();
 });
