@@ -31,7 +31,7 @@ jobs:
     - name: Run Playwright tests
       run: |
         cd tests
-        npx playwright tests.spec.js
+        npx playwright test tests.spec.js
     - uses: actions/upload-artifact@v3
       if: always()
       with:
